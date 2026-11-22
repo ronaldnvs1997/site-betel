@@ -1,0 +1,26 @@
+# dependências e gerados locais
+node_modules/
+previa/dist/
+previa/etapas.gerado.mjs
+_storage/
+chaves.json
+
+# segredos e configuração local — NUNCA enviar
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# dados reais (exportações da Agenda antiga, backups, dumps)
+dados-agenda/*.csv
+*.dump
+*.backup
+backups/
+
+# sistema / editor
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

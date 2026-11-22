@@ -1,0 +1,50 @@
+# Sistema Betel no Render: um serviço web (Node) + um banco PostgreSQL.
+# No Render: New → Blueprint → escolha este repositório do GitHub (este arquivo precisa estar na RAIZ do repositório).
+#
+# - O banco é criado e ligado ao site sozinho (DATABASE_URL).
+# - Ao iniciar, o servidor espera o banco ficar pronto, aplica as migrações que faltam
+#   (database/plataforma e database/migrations) e só então responde "ok" em /saude.
+# - A pasta site/ já vai pronta no repositório (gerada por "npm run build"); o build só instala as dependências.
+# - Credenciais NÃO ficam aqui: JWT_SECRET é gerado pelo Render; o resto é preenchido no painel (sync: false).
+#
+# Planos: sem a linha "plan", o Render usa os padrões atuais — site 0.5c-512mb (pago, não "dorme")
+# e banco 0.1c-256mb (pago, com backup). Para testar de graça, acrescente "plan: free" nos dois
+# (o banco gratuito expira em 30 dias e o site gratuito "dorme" sem acesso).
+databases:
+  - name: betel-banco
+    databaseName: betel
+    user: betel
+    region: virginia           # banco e site precisam estar na MESMA região
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: betel-site
+    runtime: node
+    region: virginia
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /saude
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: betel-banco
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: BETEL_MASTERS     # primeiros administradores: Nome|email|telefone;Nome|email|telefone
+        sync: false
+      - key: PUBLIC_URL        # ex.: https://betelflamengo.com.br — só depois que o domínio estiver apontado (usado nos e-mails)
+        sync: false
+      - key: SMTP_HOST         # e-mail de recuperação de senha (opcional)
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
