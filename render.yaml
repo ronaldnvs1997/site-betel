@@ -14,6 +14,7 @@ databases:
   - name: betel-banco
     databaseName: betel
     user: betel
+    plan: free
     region: virginia           # banco e site precisam estar na MESMA região
     postgresMajorVersion: "16"
 
