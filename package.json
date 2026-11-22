@@ -1,30 +1,23 @@
 {
   "name": "sistema-betel",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Sistema da Igreja Batista Betel — site, Área de Membros e Agenda Ministerial (Node + PostgreSQL)",
+  "description": "Sistema da Igreja Batista Betel — site, Área de Membros e Agenda Ministerial (Supabase + Render Static Site)",
   "type": "module",
   "engines": {
     "node": ">=20.11"
   },
   "scripts": {
-    "start": "node servidor/servidor.mjs",
-    "dev": "node --env-file=.env servidor/servidor.mjs",
     "build": "bash scripts/construir-site.sh",
-    "migrate": "node scripts/migrar.mjs",
-    "migrate:status": "node scripts/migrar.mjs --status",
-    "previa": "node scripts/construir-previa.mjs site previa/dist",
+    "config": "node scripts/gerar-config.mjs",
+    "dev": "node scripts/gerar-config.mjs && node scripts/servir-local.mjs",
+    "masters": "node --env-file=.env scripts/criar-primeiros-masters.mjs",
     "verificar": "node scripts/verificar.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.119.2",
-    "bcryptjs": "^2.4.3",
-    "nodemailer": "^6.9.14",
-    "pg": "^8.12.0"
+    "@supabase/supabase-js": "2.119.2"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.17",
-    "esbuild": "0.23.1",
     "jspdf": "2.5.1",
     "tailwindcss": "3.4.19"
   }

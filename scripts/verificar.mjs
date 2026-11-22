@@ -1,69 +1,63 @@
-// Confere se o projeto está pronto para subir e, se houver DATABASE_URL, se o banco aceita a instalação.
-//   npm run verificar
-// Não altera nada no banco (testes de permissão rodam dentro de uma transação desfeita no final).
+// Confere o projeto antes de enviar ao GitHub / publicar. Não altera nada.
+//   npm run verificar                      → confere arquivos e segredos
+//   SUPABASE_URL=… SUPABASE_ANON_KEY=… npm run verificar → também testa a conexão com o projeto Supabase
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+const R = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+let erros = 0, avisos = 0;
+const ok = (m) => console.log("  ✓ " + m), erro = (m) => { erros++; console.log("  ✗ " + m); }, aviso = (m) => { avisos++; console.log("  ! " + m); };
+const ler = (p) => fs.readFileSync(path.join(R, p), "utf8");
+const todos = (d, filtro = () => true) => fs.existsSync(path.join(R, d)) ? fs.readdirSync(path.join(R, d), { recursive: true }).map(String).filter((f) => fs.statSync(path.join(R, d, f)).isFile() && filtro(f)).map((f) => path.join(d, f)) : [];
 
-const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-try { for (const l of fs.readFileSync(path.join(RAIZ, ".env"), "utf8").split(/\r?\n/)) { const m = l.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/); if (m && m[2] !== "" && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, ""); } } catch (_) {}
-let falhas = 0, avisos = 0;
-const ok = (t) => console.log("  ✓ " + t), erro = (t) => { falhas++; console.log("  ✗ " + t); }, aviso = (t) => { avisos++; console.log("  ! " + t); };
+console.log("\nMigrações (supabase/migrations)");
+const mig = todos("supabase/migrations", (f) => f.endsWith(".sql")).sort();
+mig.length >= 14 ? ok(`${mig.length} migrações (M00 a M13)`) : erro(`esperava 14 migrações, achei ${mig.length}`);
+mig.some((f) => f.includes(".down.")) ? erro("há .down.sql dentro de supabase/migrations (o CLI aplicaria como migração)") : ok("reversões ficam em supabase/rollback");
+const ts = mig.map((f) => path.basename(f).slice(0, 14)); new Set(ts).size === ts.length ? ok("versões únicas") : erro("versões repetidas");
+const sql = mig.map((f) => [f, ler(f).replace(/--[^\n]*/g, "")]);
+const proib = [[/create\s+schema\s+(if\s+not\s+exists\s+)?"?auth"?/i, "cria o schema auth"], [/create\s+table\s+(if\s+not\s+exists\s+)?"?auth"?\./i, "cria tabela no schema auth"],
+  [/insert\s+into\s+"?auth"?\./i, "insere direto em tabela do auth"], [/alter\s+table\s+"?auth"?\./i, "altera tabela do auth"], [/drop\s+table\s+(if\s+exists\s+)?"?auth"?\./i, "apaga tabela do auth"],
+  [/create\s+schema\s+(if\s+not\s+exists\s+)?"?storage"?/i, "cria o schema storage"], [/create\s+table\s+(if\s+not\s+exists\s+)?"?storage"?\./i, "cria tabela no schema storage"]];
+for (const [re, m] of proib) { const q = sql.filter(([, s]) => re.test(s)).map(([f]) => path.basename(f)); q.length ? erro(`${m}: ${q.join(", ")}`) : ok(`nenhuma migração ${m}`); }
+const tabelas = sql.flatMap(([, s]) => [...s.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?public\.([a-z_]+)/gi)].map((m) => m[1]));
+// RLS ligado diretamente ou num laço "foreach t in array[...] loop … enable row level security"
+const emLaco = new Set(sql.flatMap(([, s]) => [...s.matchAll(/array\[([^\]]+)\]\s*loop[\s\S]{0,300}?enable\s+row\s+level\s+security/gi)].flatMap((m) => [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1]))));
+const semRls = tabelas.filter((t) => !emLaco.has(t) && !sql.some(([, s]) => new RegExp(`alter\\s+table\\s+public\\.${t}\\s+enable\\s+row\\s+level\\s+security`, "i").test(s)));
+semRls.length ? erro("tabelas sem RLS: " + semRls.join(", ")) : ok(`RLS ligado nas ${tabelas.length} tabelas criadas`);
+["users", "profiles", "sessions", "identities"].some((t) => tabelas.includes(t)) ? erro("há tabela própria duplicando o Auth") : ok("nenhuma tabela própria de usuários/sessões (login é o Supabase Auth)");
 
-console.log("\nArquivos do projeto");
-const exigidos = ["render.yaml", "package.json", "package-lock.json", "servidor/servidor.mjs", "nucleo/api.mjs", "nucleo/instalar.mjs", "nucleo/etapas.mjs",
-  "funcoes/comum.mjs", "funcoes/admin-usuarios.mjs", "funcoes/aprovar-acesso.mjs", "funcoes/arquivos.mjs",
-  "database/plataforma/000_plataforma.sql", "database/plataforma/001_agenda_base.sql", "site/index.html", "site/vendor/supabase.js",
-  "site/componentes.js", "site/identidade.css", "site/agenda-ministerial/index.html", "site/agenda-ministerial/agenda.css", "site/img/logo.png"];
-const faltando = exigidos.filter((f) => !fs.existsSync(path.join(RAIZ, f)));
-faltando.length ? erro("Faltam arquivos (o envio para o GitHub ficou incompleto?): " + faltando.join(", ")) : ok(`${exigidos.length} arquivos essenciais presentes`);
-const migr = fs.existsSync(path.join(RAIZ, "database/migrations")) ? fs.readdirSync(path.join(RAIZ, "database/migrations")).filter((f) => f.endsWith(".sql") && !f.includes(".down.")) : [];
-migr.length >= 12 ? ok(`${migr.length} migrações em database/migrations`) : erro(`Só ${migr.length} migrações em database/migrations (esperado 12 ou mais)`);
-if (fs.existsSync(path.join(RAIZ, "site/config.js"))) aviso("site/config.js existe; o servidor gera esse arquivo sozinho — pode apagar");
-try {
-  const pkg = JSON.parse(fs.readFileSync(path.join(RAIZ, "package.json"), "utf8")), lock = JSON.parse(fs.readFileSync(path.join(RAIZ, "package-lock.json"), "utf8"));
-  const dif = Object.keys(pkg.dependencies || {}).filter((d) => !lock.packages?.["node_modules/" + d]);
-  dif.length ? erro("package-lock.json não tem: " + dif.join(", ") + " (rode npm install e envie o package-lock.json)") : ok("package.json e package-lock.json combinam");
-} catch (e) { erro("package.json ou package-lock.json inválido: " + e.message); }
-const yaml = fs.existsSync(path.join(RAIZ, "render.yaml")) ? fs.readFileSync(path.join(RAIZ, "render.yaml"), "utf8") : "";
-/startCommand:\s*npm start/.test(yaml) && /healthCheckPath:\s*\/saude/.test(yaml) && /fromDatabase/.test(yaml) ? ok("render.yaml com início, verificação de saúde e banco ligado") : erro("render.yaml incompleto");
-const [maior] = process.versions.node.split(".").map(Number);
-maior >= 20 ? ok("Node " + process.versions.node) : erro("Node " + process.versions.node + " — precisa ser 20 ou mais novo");
+console.log("\nEdge Functions (supabase/functions)");
+for (const f of ["admin-usuarios", "aprovar-acesso", "arquivos"]) fs.existsSync(path.join(R, "supabase/functions", f, "index.ts")) ? ok(f) : erro(`falta ${f}`);
 
-console.log("\nVariáveis de ambiente");
-const jwt = process.env.JWT_SECRET || "";
-jwt.length >= 32 ? ok("JWT_SECRET definido") : aviso("JWT_SECRET ausente ou curto: o servidor cria um e guarda no banco (no Render o render.yaml já gera)");
-process.env.BETEL_MASTERS ? ok("BETEL_MASTERS definido (" + process.env.BETEL_MASTERS.split(";").filter((x) => x.includes("|")).length + " pessoa(s))") : aviso("BETEL_MASTERS vazio: nenhum administrador será criado na primeira subida");
-if (process.env.BETEL_MASTERS) for (const p of process.env.BETEL_MASTERS.split(";").map((x) => x.trim()).filter(Boolean)) { const [n, e] = p.split("|"); if (!n || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((e || "").trim())) erro(`BETEL_MASTERS: item mal escrito "${p}" (use Nome|email|telefone; separe pessoas com ;)`); }
-if (process.env.PUBLIC_URL && !/^https?:\/\/[^/]+\/?$/.test(process.env.PUBLIC_URL)) erro("PUBLIC_URL deve ser só o endereço, ex.: https://betelflamengo.com.br");
-
-console.log("\nBanco de dados");
-if (!process.env.DATABASE_URL) aviso("DATABASE_URL não definida aqui — teste do banco pulado (no Render ela vem do betel-banco)");
-else {
-  const pg = (await import("pg")).default;
-  let url = process.env.DATABASE_URL, ssl;
-  try { const u = new URL(url); const modo = u.searchParams.get("sslmode"); if ((modo && modo !== "disable") || /\.render\.com$/i.test(u.hostname) || process.env.DATABASE_SSL === "true") ssl = { rejectUnauthorized: false }; if (modo) { u.searchParams.delete("sslmode"); url = u.toString(); } } catch (_) {}
-  const c = new pg.Client({ connectionString: url, ssl, connectionTimeoutMillis: 15000 });
-  try {
-    await c.connect(); ok("conexão com o banco");
-    const v = (await c.query("show server_version_num")).rows[0].server_version_num;
-    Number(v) >= 140000 ? ok("PostgreSQL " + (await c.query("show server_version")).rows[0].server_version) : erro("PostgreSQL muito antigo (precisa 14+)");
-    const r = (await c.query("select rolsuper, rolcreaterole from pg_roles where rolname = current_user")).rows[0];
-    r.rolsuper || r.rolcreaterole ? ok("o usuário do banco pode criar papéis (CREATEROLE)") : erro("o usuário do banco NÃO tem CREATEROLE — use o usuário criado junto com o banco no Render");
-    await c.query("begin");
-    try {
-      await c.query("create role betel_verificacao_tmp nologin");
-      await c.query("do $$ begin execute format('grant betel_verificacao_tmp to %I', current_user); end $$");
-      await c.query("set local role betel_verificacao_tmp"); await c.query("reset role");
-      ok("consegue assumir os papéis de visitante/usuário (necessário para as permissões)");
-    } catch (e) { erro("não consegue criar/assumir papéis: " + e.message); }
-    await c.query("rollback");
-    const tem = (await c.query("select to_regclass('sistema.migracoes') is not null as t")).rows[0].t;
-    if (tem) { const n = (await c.query("select count(*)::int n from sistema.migracoes")).rows[0].n; ok(`banco já instalado (${n} etapa(s) registradas)`); }
-    else ok("banco vazio: o sistema será instalado na primeira subida");
-  } catch (e) { erro("banco: " + e.message); }
-  finally { await c.end().catch(() => {}); }
+console.log("\nSegredos");
+const publicos = [...todos("site"), ...todos("frontend")].filter((f) => /\.(html|js|css|json|txt)$/.test(f));
+let achou = [];
+for (const f of publicos) {
+  const s = ler(f);
+  if (/sb_secret_[A-Za-z0-9_-]{10,}/.test(s)) achou.push(f + " (chave secreta)");
+  for (const m of s.matchAll(/eyJ[A-Za-z0-9_-]{10,}\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g)) {
+    try { if (JSON.parse(Buffer.from(m[1], "base64url").toString()).role === "service_role") achou.push(f + " (service_role)"); } catch {}
+  }
 }
+achou.length ? erro("chave privada em arquivo público: " + achou.join(", ")) : ok("nenhuma chave service_role / secreta no site nem no frontend");
+fs.existsSync(path.join(R, "site/config.js")) ? aviso("site/config.js existe: ele é gerado no build e não deve ir para o GitHub (está no .gitignore)") : ok("site/config.js não está no projeto (gerado no build)");
+fs.existsSync(path.join(R, ".env")) && !ler(".gitignore").split("\n").includes(".env") ? erro(".env existe e não está no .gitignore") : ok(".env protegido pelo .gitignore");
+const rnd = ler("render.yaml").split("\n").filter((l) => !/^\s*#/.test(l)).map((l) => l.replace(/\s#.*$/, "")).join("\n");
+/type:\s*pserv|databases:|postgres/i.test(rnd) ? erro("render.yaml cria banco no Render") : ok("render.yaml não cria banco (o banco é o Supabase)");
+/SERVICE_ROLE/i.test(rnd) ? erro("render.yaml menciona a chave service_role") : ok("render.yaml usa só a chave pública");
 
-console.log(falhas ? `\n✗ ${falhas} problema(s) para corrigir antes de subir.` : `\n✓ Tudo certo${avisos ? ` (${avisos} aviso(s))` : ""}.`);
-process.exit(falhas ? 1 : 0);
+console.log("\nSite gerado (site/)");
+for (const f of ["site/index.html", "site/vendor/supabase.js", "site/agenda-ministerial/index.html", "site/agendaministerialprivada/evento/index.html", "site/identidade.css"])
+  fs.existsSync(path.join(R, f)) ? ok(f) : erro(`falta ${f} (rode npm run build)`);
+
+const URL_ = (process.env.SUPABASE_URL || "").replace(/\/+$/, ""), ANON = process.env.SUPABASE_ANON_KEY;
+if (URL_ && ANON) {
+  console.log("\nConexão com o Supabase");
+  const r = await fetch(`${URL_}/rest/v1/rpc/site_conteudo_publico`, { method: "POST", headers: { apikey: ANON, Authorization: `Bearer ${ANON}`, "Content-Type": "application/json" }, body: "{}" }).catch((e) => ({ ok: false, status: 0, text: async () => e.message }));
+  r.ok ? ok("projeto responde e as migrações até a M12 estão aplicadas") : erro(`site_conteudo_publico respondeu ${r.status}: ${(await r.text()).slice(0, 160)}`);
+  const s = await fetch(`${URL_}/auth/v1/settings`, { headers: { apikey: ANON } }).then((x) => x.json()).catch(() => null);
+  if (s) s.disable_signup ? ok("cadastro aberto no Auth desligado (só o MASTER cria contas)") : aviso("Authentication → Sign In / Providers: desligue \"Allow new users to sign up\"");
+}
+console.log(`\n${erros ? "✗" : "✓"} ${erros} erro(s), ${avisos} aviso(s)`);
+process.exit(erros ? 1 : 0);

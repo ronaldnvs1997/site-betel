@@ -2,187 +2,199 @@
 
 Site da Igreja Batista Betel (Flamengo, Contagem/MG), Área de Membros e Agenda Ministerial.
 
-Um único servidor Node.js publica o site e a API do sistema. Tudo fica num banco PostgreSQL: usuários, permissões, ministérios, organogramas, cursos, secretaria, tesouraria, membresia, certificados, Mídia, Agenda e o conteúdo administrável do site. O projeto não usa Supabase. O site usa a biblioteca `@supabase/supabase-js` só como cliente HTTP, conversando com a API deste próprio servidor.
+## Arquitetura
 
-## O que o sistema tem
+```
+Navegador ──► Render (Static Site) ........ páginas do site (pasta site/)
+    │
+    └──────► Supabase
+               ├─ Auth .................... login, sessões, recuperação de senha
+               ├─ PostgreSQL + RLS ........ dados e regras de permissão (schema public)
+               ├─ Storage ................. fotos, comprovantes e documentos
+               └─ Edge Functions .......... criar usuários, aprovar acessos, arquivos privados
+```
 
-| Parte | Onde fica |
-|---|---|
-| Site público: Início (vídeo e fotos), Sobre nós, Ministérios (lista e página de cada um), Agenda, Cursos, Colégio (etapas de ensino) e Contato | `frontend/site/` |
-| Área de Membros: painel, usuários, ministérios e lideranças, organogramas, conteúdo do site, formulários da Agenda, cursos, secretaria, tesouraria, membresia, certificados, Mídia, avisos e Meu perfil (com foto) | `frontend/site/*-sb.js` |
-| Agenda Ministerial | `frontend/agenda/` → `site/agenda-ministerial/` |
-| Formulário privado da Agenda (sem login, por link com código) | `frontend/site/agenda-privada.html` → `site/agendaministerialprivada/evento/` |
-| Banco e regras de permissão | `database/` |
-
-Os endereços antigos continuam funcionando. `#membros` leva para a Área de Membros, que segue no endereço `#equipe`.
+- O **Supabase** é o banco de dados, a autenticação, o armazenamento e o lugar das funções de servidor. Não existe outro banco nem outro login.
+- O **Render** publica só as páginas (site estático). Ele não cria banco de dados.
+- O navegador fala direto com o Supabase pelo `@supabase/supabase-js`, usando a chave **pública** (anon/publishable). O que essa chave pode fazer é limitado pelas políticas RLS e pelas funções do banco.
+- A chave **service_role** só existe dentro das Edge Functions (o Supabase a fornece) e, uma única vez, no seu computador para criar os primeiros administradores. Ela nunca vai para o site, para o Render ou para o GitHub.
+- Login, sessões e senhas ficam no `auth` do próprio Supabase. O sistema **não cria** o schema `auth` nem tabelas de usuários. Os dados complementares (nome, telefone, foto, perfil, ministérios) ficam em `public.pessoas` e `public.perfis`, ligados a `auth.users(id)`.
 
 ## Estrutura
 
 | Pasta / arquivo | O que é |
 |---|---|
-| `servidor/servidor.mjs` | Servidor HTTP: site, API, instalação do banco, tarefas a cada 15 minutos |
-| `nucleo/` | API (login, sessões, consultas com RLS, arquivos), instalação e lista de migrações |
-| `funcoes/` | Funções de servidor (criar usuário, aprovar acesso, arquivos) |
-| `database/` | Banco: base da plataforma, migrações versionadas e `schema.sql` de referência. Ver `database/README.md` |
-| `frontend/site/` | **Fontes** da página principal e dos módulos (HTML, CSS, JS, imagens, vídeo) |
-| `frontend/agenda/` | **Fontes** da Agenda Ministerial (Agenda original + mudanças aplicadas pelo build) |
-| `site/` | **Gerado** por `npm run build`. É o que o servidor publica e vai pronto para o GitHub |
-| `scripts/` | Build do site, migração, verificação e versão de teste no navegador |
-| `previa/` | Versão de teste que roda inteira no navegador (PostgreSQL em WebAssembly) |
-| `dados-agenda/` | (Opcional) CSVs da Agenda antiga para importar na primeira instalação. Não vão para o GitHub |
-| `testes/` | Baterias de teste usadas na homologação (ver `testes/LEIA-ME.md`) |
-| `render.yaml` | Configuração do Render (Blueprint): site e banco |
+| `supabase/migrations/` | Migrações versionadas M00 a M13 (aplicadas em ordem, uma única vez) |
+| `supabase/rollback/` | Como desfazer cada migração (`.down.sql`). Ficam fora de `migrations/` para o CLI não aplicá-las |
+| `supabase/functions/` | Edge Functions: `admin-usuarios`, `aprovar-acesso`, `arquivos` (+ `_shared`) |
+| `supabase/diagnostico/diagnostico.sql` | Diagnóstico **somente leitura** da instância: o que já existe e o que falta |
+| `supabase/config.toml` | Configuração do Supabase CLI (Auth, funções, ambiente local) |
+| `supabase/seed.sql` | Dados do ambiente local do CLI (os dados iniciais do sistema já vêm nas migrações) |
+| `frontend/site/` | Fontes da página principal e dos módulos (HTML, CSS, JS, imagens, vídeo) |
+| `frontend/agenda/` | Fontes da Agenda Ministerial |
+| `site/` | Site gerado por `npm run build` — é o que o Render publica |
+| `scripts/` | Build, `config.js`, primeiros administradores, verificação e servidor local |
+| `testes/` | Baterias de teste e o ambiente local que imita o Supabase (ver `testes/LEIA-ME.md`) |
+| `render.yaml` | Site estático no Render |
 | `.env.example` | Nomes das variáveis de ambiente, sem valores |
+
+## Migrações
+
+| Versão | O que faz |
+|---|---|
+| M00 | Tabelas da Agenda (`eventos`, `reservas`, `coordenadores`) com `create table if not exists`: **na instância atual não faz nada** |
+| M01 | Pessoas, perfis (ligados a `auth.users`), ministérios, solicitações de acesso, auditoria |
+| M02 | Colunas novas na Agenda (ministério, quem criou/alterou). Só acrescenta; preenche o ministério pelo nome |
+| M03 | Segurança da Agenda: RLS novas, login central para coordenadores. **Guarda uma cópia das políticas atuais e as substitui** |
+| M04 | Regras da Agenda (conflitos de horário e de espaço) |
+| M05 | Cursos e inscrições (bucket `cursos`) |
+| M06 | Secretaria e Tesouraria (buckets privados `comprovantes` e `documentos`) |
+| M07 | Membros, voluntários e termos |
+| M08 | Certificados e cerimônias |
+| M09 | Mídia e escalas |
+| M10 | Reforços de segurança (limites de uso) |
+| M11 | Meu perfil |
+| M12 | Páginas dos ministérios, lideranças, organogramas, foto de perfil, contatos e fotos do site, Colégio, link privado da Agenda (buckets `site` e `perfis`) |
+| M13 | Tarefa agendada dos prazos das escalas (pg_cron) |
+
+Todas são aditivas: não apagam tabelas, colunas nem registros existentes.
 
 ## 1. Pré-requisitos
 
-- Node.js 20.11 ou mais novo (recomendado 22, ver `.node-version`).
-- PostgreSQL 14 ou mais novo (o Render usa 16). O usuário do banco precisa poder criar papéis (`CREATEROLE`). No Render isso já vem assim.
-- Python 3: só para `npm run build`, que gera o site a partir de `frontend/`.
-- Git e uma conta no GitHub.
+- Node.js 20.11 ou mais novo (recomendado 22).
+- Python 3 — só para `npm run build` (gera o site a partir de `frontend/`).
+- [Supabase CLI](https://supabase.com/docs/guides/cli) — para aplicar migrações e publicar as funções.
+- Conta no GitHub e no Render.
 
-## 2. Instalar as dependências
+## 2. Diagnóstico da instância (antes de qualquer alteração)
+
+1. Supabase → **SQL Editor → New query**.
+2. Cole `supabase/diagnostico/diagnostico.sql` e clique em **Run**. Ele só lê; não altera nada.
+3. O resultado mostra, para cada migração, **JÁ APLICADA** ou **FALTA**, quantos eventos, reservas e usuários existem, os buckets, o pg_cron e os pontos de atenção.
+
+Não aplique nenhuma migração antes de conferir esse resultado. Os pontos que pedem decisão estão em [Pontos que dependem de aprovação](#pontos-que-dependem-de-aprovação).
+
+## 3. Backup
+
+Database → **Backups** (ou `supabase db dump -f backup.sql`). Guarde o arquivo fora do repositório.
+
+## 4. Configurar o Auth
+
+Em **Authentication**:
+
+- **Sign In / Providers → Email:** desligue **Allow new users to sign up**. Só o MASTER cria contas.
+- **Senha:** tamanho mínimo de 10 caracteres.
+- **URL Configuration:** em **Site URL**, o endereço do site (ex.: `https://betelflamengo.com.br`). Em **Redirect URLs**, inclua o mesmo endereço e o endereço do Render (`https://betel-site.onrender.com`).
+- **SMTP:** configure um SMTP próprio (ex.: Google Workspace com senha de app) para os e-mails de recuperação de senha. O SMTP padrão do Supabase tem limite muito baixo.
+- **Emails → Reset Password:** traduza o modelo para o português.
+
+## 5. Aplicar as migrações
+
+Aplique **só as que o diagnóstico marcou como FALTA**, em ordem.
+
+**Pelo Supabase CLI:**
+
+```bash
+supabase login
+supabase link --project-ref SEU_PROJECT_REF
+# Para cada migração que o diagnóstico marcou como JÁ APLICADA (feita antes pelo SQL Editor),
+# registre-a como aplicada, para o CLI não tentar rodar de novo. Exemplo:
+supabase migration repair --status applied 20261121000000 20261121000100
+supabase migration list        # confira: as aplicadas e as que faltam
+supabase db push               # aplica só as que faltam
+```
+
+**Pelo SQL Editor:** abra cada arquivo de `supabase/migrations/` que falta, na ordem do número, cole e clique em **Run**. Cada arquivo roda numa transação: se der erro, nada daquele arquivo fica gravado.
+
+Depois, rode o diagnóstico de novo: todas devem aparecer como **JÁ APLICADA**.
+
+Se o pg_cron estiver inativo, ative em **Database → Extensions → pg_cron** e rode a M13 de novo.
+
+## 6. Publicar as Edge Functions
+
+```bash
+supabase functions deploy admin-usuarios aprovar-acesso arquivos
+supabase secrets set SITE_ORIGEM=https://betelflamengo.com.br
+```
+
+`SITE_ORIGEM` faz as funções aceitarem chamadas só do site (sem ele, aceitam qualquer origem — o login e as permissões continuam sendo exigidos). As funções recebem `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` automaticamente do Supabase.
+
+## 7. Primeiros administradores (MASTER)
+
+Uma única vez, num computador seguro:
+
+```bash
+cp .env.example .env            # preencha SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY
+npm ci
+npm run masters -- "Nome Completo|email@dominio.com|31999999999"
+```
+
+A senha temporária aparece **uma vez** na tela. O sistema exige trocá-la no primeiro acesso. Depois que um MASTER concluir o primeiro acesso, o script deixa de funcionar e as contas passam a ser criadas pela Área de Membros. Apague a `SUPABASE_SERVICE_ROLE_KEY` do `.env` depois.
+
+## 8. Rodar no computador
 
 ```bash
 npm ci
+npm run build        # só se mexeu em frontend/ (precisa de Python 3)
+npm run dev          # gera site/config.js a partir do .env e abre em http://localhost:8080
 ```
 
-Instala as dependências do servidor e as ferramentas de build (Tailwind, esbuild). Em produção o Render roda `npm ci --omit=dev`, que instala só o necessário para o servidor.
-
-## 3. Configurar as variáveis de ambiente
-
-```bash
-cp .env.example .env
-```
-
-Preencha o `.env`. Ele está no `.gitignore` e não vai para o GitHub.
-
-| Variável | Obrigatória | Para quê |
-|---|---|---|
-| `DATABASE_URL` | sim | Endereço do PostgreSQL |
-| `JWT_SECRET` | sim | Segredo das sessões (32+ caracteres aleatórios). Gere com `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-| `PORT` | não | Porta local (padrão 8095) |
-| `PUBLIC_URL` | não | Endereço público, ex.: `https://betelflamengo.com.br` |
-| `BETEL_MASTERS` | 1ª vez | Primeiros administradores: `Nome\|email\|telefone;Nome\|email\|telefone` |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | não | E-mail do "Esqueci minha senha" e do "Não sei minha senha atual". Sem isso, o site orienta a pessoa a pedir uma senha temporária ao administrador |
-| `DATABASE_SSL` | não | `true` só para conexão externa com SSL |
-
-## 4. Executar localmente
-
-```bash
-createdb betel                 # ou crie o banco pelo seu gerenciador
-npm run dev                    # lê o .env, instala/atualiza o banco e sobe em http://localhost:8095
-```
-
-Na primeira vez, o servidor cria as tabelas e os administradores de `BETEL_MASTERS`. A senha temporária de cada um aparece **uma vez** no terminal. O sistema exige trocá-la no primeiro acesso.
-
-## 5. Gerar o site (build)
-
-O servidor publica a pasta `site/`. Depois de alterar qualquer arquivo em `frontend/`:
-
-```bash
-npm run build
-```
-
-O build monta `site/index.html`, a Agenda Ministerial (`site/agenda-ministerial/`), o formulário privado da Agenda (`site/agendaministerialprivada/evento/`), o CSS da Agenda e o `identidade.css`. Faça commit da pasta `site/` junto com as fontes: é ela que vai para o Render. O `config.js` não fica na pasta, porque o servidor o gera na hora.
-
-## 6. Banco de dados
-
-O banco é criado e atualizado sozinho quando o servidor inicia. A ordem das migrações, o que cada uma faz e como desfazer estão em [`database/README.md`](database/README.md).
-
-Conteúdo que já vem cadastrado e **precisa ser revisado** na Área de Membros:
-
-- **Ministérios → página de cada ministério:** os textos "O que fazemos", "Por que existimos" e "Nossa missão" começam como rascunho e só aparecem no site depois que a liderança revisa e clica em **Salvar e publicar**.
-- **Conteúdo do site → Colégio:** faixa etária e diferenciais pedagógicos ficam vazios até a direção informar. Campos vazios não aparecem no site.
-- **Conteúdo do site → Contatos:** confira se cada número marcado como WhatsApp realmente tem WhatsApp.
-- **Organogramas:** o topo da igreja já traz Pr. Clébio Torres (Presidente e Pastor Sênior). As demais funções são cadastradas pela administração.
-
-## 7. Migrações
-
-```bash
-npm run verificar        # confere arquivos, variáveis e permissões do banco (não altera nada)
-npm run migrate:status   # mostra o que já foi aplicado e o que falta (não altera nada)
-npm run migrate          # aplica só o que falta
-```
-
-Alternativa sem Node: `psql "URL_DO_BANCO" -f database/instalar-tudo.sql`. É o mesmo conteúdo num único arquivo, e pula o que já foi aplicado.
-
-Cada migração roda uma única vez e fica registrada em `sistema.migracoes`. Para criar uma nova:
-
-1. Crie `database/migrations/AAAAMMDDHHMMSS_mNN_descricao.sql`, aditiva, entre `begin;` e `commit;`.
-2. Crie o `.down.sql` correspondente, que desfaz sem apagar dados.
-3. Teste num banco de teste antes de publicar.
-
-Nunca edite uma migração que já rodou em produção. Corrija com uma migração nova.
-
-## 8. Testar antes de publicar
-
-1. `npm run verificar` precisa terminar sem erro.
-2. Suba localmente (`npm run dev`) e confira: Início, Ministérios, Colégio, Contato, login na Área de Membros, Meu perfil e um formulário privado da Agenda aberto no celular.
-3. As baterias automáticas usadas na homologação estão em `testes/` (ver `testes/LEIA-ME.md`).
+Adicione `http://localhost:8080` em Authentication → URL Configuration → Redirect URLs para testar a recuperação de senha localmente.
 
 ## 9. Enviar para o GitHub
 
 Crie um repositório **privado** no GitHub. Na primeira vez:
 
 ```bash
+npm run verificar               # precisa terminar sem erro
 git init
 git add .
-git commit -m "Sistema Betel"
+git commit -m "Sistema Betel (Supabase + Render)"
 git branch -M main
 git remote add origin git@github.com:SUA-CONTA/sistema-betel.git
 git push -u origin main
 ```
 
-Antes de cada `git add`, confira com `git status` que nenhum `.env`, CSV da Agenda antiga ou arquivo pessoal entrou na lista. O `.gitignore` já bloqueia esses casos.
+Antes de cada `git add`, confira com `git status` que nenhum `.env`, `site/config.js`, backup ou CSV entrou. O `.gitignore` já bloqueia esses casos.
 
 ## 10. Publicar no Render
 
-O passo a passo completo, com a solução dos erros mais comuns, está em **[PUBLICAR-NO-RENDER.md](PUBLICAR-NO-RENDER.md)**. Resumo:
+1. Render → **New → Blueprint** → escolha o repositório. O `render.yaml` cria só o **betel-site** (site estático).
+2. Preencha as variáveis pedidas:
+   - `SUPABASE_URL` — Project Settings → API → Project URL.
+   - `SUPABASE_ANON_KEY` — a chave **anon** (ou **publishable**). Nunca a service_role/secret: o build recusa.
+3. O build roda `node scripts/gerar-config.mjs`, que cria `site/config.js`, e publica a pasta `site/`.
+4. Domínio próprio: **betel-site → Settings → Custom Domains**. Depois, atualize o **Site URL** e as **Redirect URLs** do Auth (passo 4) e o `SITE_ORIGEM` das funções (passo 6).
 
-1. No Render: **New → Blueprint** e escolha o repositório. O `render.yaml` cria:
-   - **betel-banco**: PostgreSQL 16 (o plano gratuito expira em 30 dias; para uso real, escolha um pago com backup).
-   - **betel-site**: serviço web Node. Build: `npm ci --omit=dev`. Início: `npm start`. Verificação de saúde: `/saude`. A porta vem do Render (`PORT`).
-   - O servidor espera o banco ficar pronto, instala as migrações e só então responde "ok" em `/saude`.
-2. O Render pede as variáveis marcadas como `sync: false`. Preencha `BETEL_MASTERS`. Deixe `PUBLIC_URL` vazio até o domínio próprio funcionar. `SMTP_*` é opcional. `DATABASE_URL` e `JWT_SECRET` já vêm preenchidos.
-3. Confira o preço dos planos na tela antes de confirmar.
-4. Domínio próprio: **betel-site → Settings → Custom Domains**. Depois, preencha `PUBLIC_URL` com o domínio.
+O Render republica sozinho a cada `git push` na `main`.
 
-Para trazer os dados da Agenda antiga, coloque os CSVs em `dados-agenda/` **antes da primeira subida** (ver `dados-agenda/LEIA-ME.txt`).
+## 11. Logs e diagnóstico
 
-## 11. Acompanhar os logs
+- **Render:** betel-site → **Events / Logs** mostra o build. A linha `site/config.js gerado para https://…` confirma a configuração.
+- **Supabase → Logs:** **API** (consultas e erros de permissão), **Auth** (logins, recuperação de senha), **Edge Functions** (criar usuário, aprovar acesso, arquivos) e **Postgres**.
+- **Verificação completa:** `SUPABASE_URL=… SUPABASE_ANON_KEY=… npm run verificar` confere o projeto, os segredos e se o Supabase responde com as migrações aplicadas.
+- **Dentro do site:** Área de Membros → **Histórico** (MASTER) lista quem alterou o quê.
 
-Os logs mostram tudo o que o servidor faz e, em caso de problema, dizem em português o que falta.
+## 12. Atualizar e desfazer
 
-- **No Render:** abra **betel-site → Logs**. Na primeira subida aparecem, em ordem: *Aplicando …* (uma linha por etapa do banco), *Banco atualizado*, as **senhas temporárias** dos administradores (anote, aparecem uma vez) e *Sistema pronto*.
-- **No computador:** as mesmas mensagens aparecem no terminal do `npm run dev`.
-- **Situação do serviço:** abra `https://SEU-ENDERECO/saude`. Responde `ok` quando tudo está pronto, e 503 com o motivo enquanto o banco ainda está sendo preparado.
-- **Banco:** **betel-banco → Metrics** mostra conexões e uso de disco. `npm run migrate:status` mostra as etapas aplicadas.
-- **Histórico de ações:** dentro do site, **Área de Membros → Histórico** (MASTER) lista quem alterou o quê, inclusive ministérios, organogramas, fotos, contatos e decisões sobre fichas da Agenda.
+- **Mudança no banco:** crie uma migração nova em `supabase/migrations/` (`AAAAMMDDHHMMSS_mNN_descricao.sql`, aditiva, entre `begin;` e `commit;`) e o `.down.sql` em `supabase/rollback/`. Nunca edite uma migração que já rodou.
+- **Mudança no site:** edite `frontend/`, rode `npm run build`, faça commit e push.
+- **Voltar o site:** Render → betel-site → **Events → Rollback**.
+- **Desfazer uma migração:** faça backup, rode o `.down.sql` correspondente de `supabase/rollback/` no SQL Editor e, se usa o CLI, `supabase migration repair --status reverted VERSÃO`. A reversão da M12 remove o conteúdo cadastrado nas telas dela (páginas, organogramas, fichas da Agenda privada); pessoas, ministérios e eventos ficam.
 
-## 12. Atualizar, fazer backup e desfazer
+## Pontos que dependem de aprovação
 
-Cada nova versão:
+O diagnóstico mostra estes itens. Nenhum é alterado sem a sua decisão:
 
-```bash
-npm run build            # se mexeu em frontend/
-git add .
-git commit -m "Descreva a mudança"
-git push
-```
-
-O Render publica sozinho a cada push na `main` (Auto-Deploy) e o servidor aplica as migrações novas na subida.
-
-- **Backup:** antes de uma mudança grande, faça um backup manual em **betel-banco → Backups**.
-- **Voltar o código:** em **betel-site → Events**, use **Rollback** para a versão anterior.
-- **Desfazer uma migração:** rode o `.down.sql` correspondente, depois de um backup. Os detalhes estão em `database/README.md`.
+1. **Senhas em texto da Agenda antiga** (`coordenadores.senha`). As migrações bloqueiam o acesso a essa coluna para o site, mas não apagam os valores. Depois que os coordenadores passarem a entrar pelo login central, a limpeza pode ser feita por uma migração própria, com a sua aprovação.
+2. **Políticas atuais da Agenda.** A M03 guarda uma cópia das políticas e permissões existentes de `eventos`, `reservas` e `coordenadores` (em `public.auditoria`, ação `agenda_estado_anterior`) e as substitui. Depois dela, só coordenadores logados gravam na Agenda: a página antiga da Agenda deixa de gravar sem login. A reversão (`rollback/…m03….down.sql`) recoloca as políticas antigas.
+3. **Gatilho em `auth.users`.** A M01 cria um único gatilho (`betel_senha_alterada`) que registra em `public.perfis` quando a pessoa troca a senha temporária. Ele não altera a estrutura nem os dados do `auth` — é o padrão documentado pelo Supabase para reagir a eventos de usuários.
 
 ## Segurança
 
-- Senhas guardadas só como hash (bcrypt). Ninguém, nem o administrador, consegue ver a senha atual de alguém. Sessões, links de recuperação e códigos dos formulários privados também são guardados como hash.
-- **Sair** encerra a sessão no servidor: o token daquela sessão deixa de valer na hora.
+- Login, sessões e senhas: Supabase Auth. Ninguém, nem o administrador, vê a senha de alguém. Sair encerra a sessão daquele aparelho no Supabase Auth; o acesso já emitido vale no máximo até expirar (1 hora, padrão do Supabase).
 - Permissões conferidas no banco (RLS e funções), nunca só na tela. O organograma não concede permissões.
-- Formulário privado da Agenda: código aleatório de 64 caracteres, com validade, revogável e renovável. Ele só envia uma ficha, que fica **aguardando análise**. Não lê, não altera e não exclui eventos. Uso excessivo é bloqueado por alguns minutos, e a página fica fora dos buscadores.
-- Fotos: o servidor confere o tipo real do arquivo (não só a extensão) e o tamanho. Cada pessoa troca apenas a própria foto de perfil, que só aparece nos organogramas com autorização.
-- Documentos e comprovantes ficam no banco, em área privada, com link temporário.
-- Nada de segredo no código: tudo vem das variáveis de ambiente.
+- Criar usuários e aprovar acessos: só nas Edge Functions, que conferem se quem chamou é MASTER ativo.
+- Comprovantes e documentos: buckets privados, acessados por link temporário de 5 minutos, gerado só para quem tem permissão.
+- Fotos do site e de perfil: buckets públicos com endereço aleatório (ninguém lista os arquivos); só envia quem tem permissão, com limite de tamanho e de tipo.
+- Formulário privado da Agenda: código aleatório de 64 caracteres, com validade, revogável; só envia uma ficha que fica aguardando análise.

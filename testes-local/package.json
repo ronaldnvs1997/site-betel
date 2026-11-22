@@ -1,0 +1,12 @@
+{
+  "name": "sistema-betel-testes-local",
+  "private": true,
+  "type": "module",
+  "description": "Ambiente local que imita o Supabase (Auth, PostgREST, Storage com RLS, Edge Functions) para as baterias de teste",
+  "dependencies": {
+    "@supabase/supabase-js": "2.119.2",
+    "bcryptjs": "^3.0.3",
+    "pg": "^8.23.1",
+    "playwright-core": "^1.65.1"
+  }
+}

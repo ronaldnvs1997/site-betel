@@ -1,5 +1,5 @@
 #!/bin/bash
-# Gera a pasta site/ (o que o servidor publica) a partir das fontes em frontend/.
+# Gera a pasta site/ (o que o Render publica como site estático) a partir das fontes em frontend/.
 # Uso: npm run build      (precisa de Node 20+, Python 3 e das dependências de desenvolvimento: npm ci)
 set -e
 cd "$(dirname "$0")/.."
@@ -28,6 +28,7 @@ js(){ for f in "$@"; do echo "<script>"; cat $F/$f; echo "</script>"; done; }
 cp $NM/@supabase/supabase-js/dist/umd/supabase.js $OUT/vendor/supabase.js
 cp $F/componentes.js $OUT/componentes.js
 rm -rf $OUT/img $OUT/video; cp -r $F/img $F/video $OUT/
+cp $F/img/logo.png $OUT/favicon.ico
 mkdir -p $OUT/agendaministerialprivada/evento && cp $F/agenda-privada.html $OUT/agendaministerialprivada/evento/index.html
 
 # 2. Agenda Ministerial (gerada a partir da Agenda original, com as mudanças listadas em build_agenda.py)
@@ -37,4 +38,4 @@ cp $NM/jspdf/dist/jspdf.umd.min.js $OUT/vendor/
 
 # 3. Identidade do site para a Agenda (extraída do CSS da página principal)
 python3 scripts/extrair_identidade.py >/dev/null
-echo "site/ gerado. O config.js é criado pelo servidor ao vivo (não fica nesta pasta)."
+echo "site/ gerado. O config.js (endereço e chave pública do Supabase) é criado por: npm run config"

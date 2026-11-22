@@ -1,0 +1,51 @@
+# Configuração do Supabase CLI (https://supabase.com/docs/guides/cli).
+# Usada para aplicar as migrações (supabase db push) e publicar as Edge Functions
+# (supabase functions deploy). Também permite rodar o projeto localmente (supabase start).
+project_id = "sistema-betel"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+[auth]
+enabled = true
+# Endereço do site (no projeto real: Authentication → URL Configuration)
+site_url = "http://localhost:8080"
+additional_redirect_urls = ["http://localhost:8080"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+# Só o MASTER cria contas (pela Área de Membros / Edge Function admin-usuarios)
+enable_signup = false
+minimum_password_length = 10
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+double_confirm_changes = true
+
+# As funções conferem o login e a permissão no próprio código (e no banco).
+# verify_jwt = false permite as chaves novas (publishable), que não são JWT,
+# e o envio de comprovante por quem se inscreveu num curso sem ter conta.
+[functions.admin-usuarios]
+verify_jwt = false
+
+[functions.aprovar-acesso]
+verify_jwt = false
+
+[functions.arquivos]
+verify_jwt = false

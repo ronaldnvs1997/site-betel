@@ -1,19 +1,20 @@
 # dependências e gerados locais
 node_modules/
-previa/dist/
-previa/etapas.gerado.mjs
-_storage/
-chaves.json
+site/config.js
+testes/ambiente-local/_storage/
+supabase/.temp/
+supabase/.branches/
 
 # segredos e configuração local — NUNCA enviar
 .env
 .env.*
 !.env.example
+supabase/functions/.env
 *.pem
 *.key
 
-# dados reais (exportações da Agenda antiga, backups, dumps)
-dados-agenda/*.csv
+# dados reais (exportações, backups, dumps)
+*.csv
 *.dump
 *.backup
 backups/
