@@ -1,0 +1,11 @@
+(Opcional) Dados da Agenda Ministerial atual.
+
+Antes da PRIMEIRA subida no Render, coloque aqui os arquivos exportados do painel do Supabase
+(Table Editor -> tabela -> Export -> Export table as CSV):
+
+  eventos.csv
+  reservas.csv
+  coordenadores.csv
+
+O sistema importa esses dados uma única vez, na instalação do banco, e os converte para o formato novo.
+Se a pasta estiver vazia, a Agenda começa sem eventos.

@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda Ministerial — Igreja Batista Betel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,500,100;0,9..144,600,100;1,9..144,400,0&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="agenda.css" />
+  <link rel="stylesheet" href="../identidade.css" />
+  <script src="../config.js"></script>
+  <script src="../vendor/supabase.js"></script>
+  <script src="../vendor/jspdf.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+
+    // Função para calcular feriados nacionais fixos e móveis do Brasil para um dado ano
+    function obterFeriadosAno(ano) {
+      const feriados = {};
+      
+      // Fixos
+      feriados[`${ano}-01-01`] = "Confraternização Universal";
+      feriados[`${ano}-04-21`] = "Tiradentes";
+      feriados[`${ano}-05-01`] = "Dia do Trabalho";
+      feriados[`${ano}-09-07`] = "Independência do Brasil";
+      feriados[`${ano}-10-12`] = "Nossa Sra. Aparecida";
+      feriados[`${ano}-11-02`] = "Finados";
+      feriados[`${ano}-11-15`] = "Proclamação da República";
+      feriados[`${ano}-11-20`] = "Dia da Consciência Negra";
+      feriados[`${ano}-12-25`] = "Natal";
+
+      // Móveis (Cálculo de Páscoa pelo algoritmo de Meeus/Jones/Butcher)
+      const a = ano % 19;
+      const b = Math.floor(ano / 100);
+      const c = ano % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const mesPascoa = Math.floor((h + l - 7 * m + 114) / 31);
+      const diaPascoa = ((h + l - 7 * m + 114) % 31) + 1;
+      
+      const dataPascoa = new Date(ano, mesPascoa - 1, diaPascoa);
+      
+      // Sexta-feira Santa (-2 dias)
+      const sextaSanta = new Date(dataPascoa);
+      sextaSanta.setDate(dataPascoa.getDate() - 2);
+      feriados[sextaSanta.toISOString().split('T')[0]] = "Sexta-feira Santa";
+
+      // Carnaval (-47 dias)
+      const carnaval = new Date(dataPascoa);
+      carnaval.setDate(dataPascoa.getDate() - 47);
+      feriados[carnaval.toISOString().split('T')[0]] = "Carnaval";
+
+      // Corpus Christi (+60 dias)
+      const corpusChristi = new Date(dataPascoa);
+      corpusChristi.setDate(dataPascoa.getDate() + 60);
+      feriados[corpusChristi.toISOString().split('T')[0]] = "Corpus Christi";
+
+      return feriados;
+    }
+
+
+
+    // Função para perguntar o ano e gerar PDF anual de 12 páginas com feriados e eventos
+    function perguntarEAbrirPdfAnual() {
+      const anoInput = prompt("Digite o ano que deseja exportar em PDF (ex: " + anoAtual + "):", anoAtual);
+      if (!anoInput) return;
+      const anoEscolhido = parseInt(anoInput, 10);
+      if (isNaN(anoEscolhido) || anoEscolhido < 2000 || anoEscolhido > 2100) {
+        alert("Por favor, digite um ano válido (ex: 2027).");
+        return;
+      }
+      gerarPDFAnualCompleto(anoEscolhido);
+    }
+
+    function gerarPDFAnualCompleto(anoEscolhido) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const baseUrl = window.location.origin + window.location.pathname;
+      const feriadosAno = obterFeriadosAno(anoEscolhido);
+
+      for (let mIdx = 0; mIdx < 12; mIdx++) {
+        if (mIdx > 0) {
+          doc.addPage();
+        }
+
+        // Cabeçalho da página
+        doc.setFillColor(88, 33, 33);
+        doc.rect(0, 0, 297, 26, 'F');
+
+        doc.setTextColor(255, 225, 178);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('IGREJA BATISTA BETEL', 14, 11);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(`Calendário Ministerial e Feriados Nacionais — ${anoEscolhido}`, 14, 18);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        doc.text(`${NOMES_MESES[mIdx].toUpperCase()} ${anoEscolhido}`, 283, 15, { align: 'right' });
+
+        const diasSemana = ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'];
+        const margemX = 14;
+        const topoGrade = 32;
+        const larguraCol = (297 - 28) / 7;
+        const alturaCabecalhoDias = 8;
+
+        doc.setFillColor(62, 21, 21);
+        doc.rect(margemX, topoGrade, 297 - 28, alturaCabecalhoDias, 'F');
+        doc.setTextColor(255, 225, 178);
+        doc.setFontSize(8.5);
+        diasSemana.forEach((dia, idx) => {
+          doc.text(dia, margemX + idx * larguraCol + larguraCol / 2, topoGrade + 5.5, { align: 'center' });
+        });
+
+        const primeiroDia = new Date(anoEscolhido, mIdx, 1).getDay();
+        const totalDias = new Date(anoEscolhido, mIdx + 1, 0).getDate();
+        const totalCelulas = Math.ceil((primeiroDia + totalDias) / 7) * 7;
+        const numLinhas = totalCelulas / 7;
+        const alturaCelula = (195 - (topoGrade + alturaCabecalhoDias)) / numLinhas;
+        const mesStr = String(mIdx + 1).padStart(2, '0');
+
+        let diaContador = 1;
+        for (let i = 0; i < totalCelulas; i++) {
+          const col = i % 7;
+          const row = Math.floor(i / 7);
+          const x = margemX + col * larguraCol;
+          const y = topoGrade + alturaCabecalhoDias + row * alturaCelula;
+
+          doc.setDrawColor(210, 200, 195);
+          doc.setFillColor(255, 253, 250);
+          doc.rect(x, y, larguraCol, alturaCelula, 'FD');
+
+          if (i >= primeiroDia && diaContador <= totalDias) {
+            const diaStr = String(diaContador).padStart(2, '0');
+            const dataISO = `${anoEscolhido}-${mesStr}-${diaStr}`;
+            const feriadoNome = feriadosAno[dataISO];
+            const eventosDia = eventos.filter(e => e.data === dataISO);
+            const reservasDia = reservas.filter(r => r.data === dataISO);
+
+            // Número do dia
+            doc.setTextColor(feriadoNome ? 180 : 88, feriadoNome ? 30 : 33, feriadoNome ? 30 : 33);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.text(String(diaContador), x + 2.5, y + 5.5);
+
+            let offsetY = y + 7.5;
+
+            // Feriado no PDF
+            if (feriadoNome) {
+              const boxH = 5;
+              if (offsetY + boxH <= y + alturaCelula - 1) {
+                doc.setFillColor(254, 226, 226);
+                doc.roundedRect(x + 1.5, offsetY, larguraCol - 3, boxH, 1, 1, 'F');
+                doc.setTextColor(153, 27, 27);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6);
+                const ferCortado = feriadoNome.length > 20 ? feriadoNome.substring(0, 19) + '…' : feriadoNome;
+                doc.text(`* ${ferCortado}`, x + 2.3, offsetY + 3.5);
+                offsetY += boxH + 1;
+              }
+            }
+
+            eventosDia.forEach(ev => {
+              const boxH = 5.8;
+              if (offsetY + boxH <= y + alturaCelula - 1) {
+                doc.setFillColor(88, 33, 33);
+                doc.roundedRect(x + 1.5, offsetY, larguraCol - 3, boxH, 1, 1, 'F');
+
+                doc.setTextColor(255, 225, 178);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(6.5);
+                const tituloCortado = ev.titulo.length > 18 ? ev.titulo.substring(0, 17) + '…' : ev.titulo;
+                doc.text(tituloCortado, x + 2.3, offsetY + 3.8);
+
+                const linkEvento = `${baseUrl}?evento=${ev.id}`;
+                doc.link(x + 1.5, offsetY, larguraCol - 3, boxH, { url: linkEvento });
+
+                offsetY += boxH + 0.8;
+              }
+            });
+
+            reservasDia.forEach(res => {
+              const boxH = 5;
+              if (offsetY + boxH <= y + alturaCelula - 1) {
+                doc.setFillColor(254, 243, 199);
+                doc.setDrawColor(217, 119, 6);
+                doc.roundedRect(x + 1.5, offsetY, larguraCol - 3, boxH, 1, 1, 'FD');
+
+                doc.setTextColor(120, 53, 15);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(6);
+                const txtRes = `${res.ministerio} (${res.espacos})`;
+                const txtCortado = txtRes.length > 20 ? txtRes.substring(0, 19) + '…' : txtRes;
+                doc.text(txtCortado, x + 2.3, offsetY + 3.5);
+
+                offsetY += boxH + 0.8;
+              }
+            });
+
+            diaContador++;
+          }
+        }
+
+        doc.setTextColor(120, 110, 110);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.text(`Página ${mIdx + 1} de 12 • Ano ${anoEscolhido} • Igreja Batista Betel`, 14, 203);
+      }
+
+      doc.save(`Calendario_Betel_Completo_${anoEscolhido}.pdf`);
+    }
+
+  </script>
+        <style>
+    .calendar-cell { min-height: 115px; transition: all 0.15s ease; }
+    @media (max-width: 640px) { 
+      .calendar-cell { min-height: 68px; padding: 2px; }
+      .calendar-cell span.font-bold { font-size: 10px; }
+      .calendar-cell button { font-size: 9px; padding: 2px 3px; line-height: 1.1; margin-bottom: 1px; }
+      
+      input[type="date"], input[type="time"] {
+        text-align: center !important;
+      }
+      
+      input[type="text"], input[type="date"], input[type="time"], input[type="url"], input[type="password"], select, textarea {
+        font-size: 13px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col tema-betel">
+
+  <!-- Cabeçalho Institucional -->
+  <header class="top glass">
+    <a class="logo" href="../#inicio" aria-label="Igreja Batista Betel — início"><img src="../img/logo.png" alt="Igreja Batista Betel"></a>
+    <button class="menu-btn" id="agMenuBtn" type="button" aria-expanded="false" aria-controls="agNav">Menu</button>
+    <nav class="nav" id="agNav" aria-label="Principal">
+      <a href="../#inicio">Início</a><a href="../#sobre">Sobre nós</a><a href="../#ministerios">Ministérios</a><a href="../#agenda">Agenda</a><a href="../#cursos">Cursos</a><a href="../#colegio">Colégio</a><a href="../#contato">Contato</a><a href="../#equipe" aria-current="page">Área de Membros</a>
+    </nav>
+  </header>
+  <header class="wrap sub-hero ag-modulo">
+    <p class="eyebrow">Área de Membros</p>
+    <h1 class="cursor-pointer" onclick="voltarParaCalendario()" title="Voltar ao calendário">Agenda <em>Ministerial</em>.</h1>
+    <p class="lead" style="margin-top:20px">Calendário dos ministérios, reservas de espaços e fichas dos eventos.</p>
+    <div class="ctas">
+      <button id="btn-modo-coord" onclick="alternarModoCoordenador()" class="btn btn-s" type="button">Entrar / Modo Coordenador</button>
+      <a href="../#equipe" class="btn btn-s">Área de Membros</a>
+      <button onclick="perguntarEAbrirPdfAnual()" class="btn btn-p" type="button"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg> Baixar PDF Interativo</button>
+    </div>
+  </header>
+
+  <!-- Barra de Alerta do Modo Coordenador -->
+  <div id="barra-coordenador" class="hidden bg-amber-100 border-b border-amber-300 text-amber-950 px-4 py-2.5 text-xs sm:text-sm">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <span><strong>Modo Coordenador Ativo (<span id="nome-coord-logado">Coordenador</span>):</strong> Gerencie eventos, reservas e acessos.</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="abrirModalNovoEvento()"
+          class="bg-betel-vinho text-betel-dourado px-3 py-1.5 rounded-md font-semibold hover:bg-betel-vinhoEscuro transition shadow-sm">
+          + Novo Evento
+        </button>
+        <button onclick="abrirModalReserva()"
+          class="bg-amber-800 text-white px-3 py-1.5 rounded-md font-semibold hover:bg-amber-900 transition shadow-sm">
+          <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg> Reservar Espaço / Templo
+        </button>
+        <button onclick="abrirModalAlterarSenha()"
+          class="bg-white border border-amber-400 text-amber-950 px-3 py-1.5 rounded-md font-semibold hover:bg-amber-50 transition shadow-sm">
+          <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9m-3 3 3 3m-6 0 2 2"/></svg> Alterar Minha Senha
+        </button>
+        <button id="btn-gestao-coord" onclick="abrirModalGestaoCoordenadores()"
+          class="bg-stone-800 text-white px-3 py-1.5 rounded-md font-semibold hover:bg-stone-900 transition shadow-sm">
+          <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg> Gestão de Coordenadores
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra do Líder (preenche fichas do próprio ministério) -->
+  <div id="barra-lider" class="hidden bg-emerald-50 border-b border-emerald-200 text-emerald-950 px-4 py-2.5 text-xs sm:text-sm">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <span id="texto-barra-lider"></span>
+      <button onclick="abrirModalAlterarSenha()" class="bg-white border border-emerald-400 text-emerald-950 px-3 py-1.5 rounded-md font-semibold hover:bg-emerald-50 transition shadow-sm"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9m-3 3 3 3m-6 0 2 2"/></svg> Alterar Minha Senha</button>
+    </div>
+  </div>
+  <datalist id="lista-ministerios"></datalist>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
+
+    <!-- Status de Carregamento / Erro -->
+    <div id="status-banner" class="hidden mb-4 p-3 rounded-lg text-sm font-medium"></div>
+
+    <!-- TELA 1: CALENDÁRIO MENSAL -->
+    <section id="tela-calendario">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-5 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+        <div class="flex items-center justify-center gap-2 w-full sm:w-auto">
+          <button onclick="mudarMes(-1)" class="p-2 rounded-lg hover:bg-stone-100 text-betel-vinho font-bold" title="Mês anterior">◀</button>
+          <h2 id="titulo-mes-ano" class="font-serif text-xl sm:text-2xl font-bold text-betel-vinho min-w-[180px] text-center capitalize">
+            Mês
+          </h2>
+          <button onclick="mudarMes(1)" class="p-2 rounded-lg hover:bg-stone-100 text-betel-vinho font-bold" title="Próximo mês">▶</button>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-stone-600">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-sm bg-betel-vinho inline-block"></span> Evento (clique para preencher)
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-sm bg-amber-200 border border-amber-500 inline-block"></span> Reserva de Espaço
+          </span>
+
+        </div>
+      </div>
+
+      <!-- Grade do Calendário -->
+      <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+        <div class="grid grid-cols-7 bg-betel-vinho text-betel-dourado text-center text-xs sm:text-sm font-semibold py-2.5">
+          <div>Dom</div>
+          <div>Seg</div>
+          <div>Ter</div>
+          <div>Qua</div>
+          <div>Qui</div>
+          <div>Sex</div>
+          <div>Sáb</div>
+        </div>
+        <div id="grade-dias" class="grid grid-cols-7 divide-x divide-y divide-stone-200"></div>
+      </div>
+
+      <!-- Listas Resumidas do Mês (Eventos + Reservas) -->
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+          <h3 class="font-serif text-lg font-bold text-betel-vinho mb-3">Eventos Programados neste Mês</h3>
+          <div id="lista-eventos-mes" class="space-y-2"></div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+          <h3 class="font-serif text-lg font-bold text-amber-900 mb-3">Reservas de Espaços neste Mês</h3>
+          <div id="lista-reservas-mes" class="space-y-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TELA 2: PÁGINA DO EVENTO (FORMULÁRIO DO LÍDER + MURAL PÚBLICO) -->
+    <section id="tela-evento" class="hidden">
+      <button onclick="voltarParaCalendario()"
+        class="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-betel-vinho hover:underline">
+        ← Voltar para o Calendário
+      </button>
+
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <!-- Coluna Esquerda: Mural Público Atual (Visível para Todos) -->
+        <div class="lg:col-span-2 bg-betel-vinho text-betel-dourado p-6 rounded-2xl shadow-md flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="inline-block px-3 py-1 rounded-full bg-betel-dourado/20 text-betel-dourado text-xs font-semibold uppercase tracking-wider">
+                Ficha Oficial do Evento
+              </span>
+              <span id="badge-ficha-trancada" class="hidden inline-block px-2.5 py-1 rounded-full bg-red-600 text-white text-xs font-bold uppercase tracking-wider">
+                <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Ficha Trancada
+              </span>
+            </div>
+
+            <h2 id="detalhe-titulo" class="font-serif text-2xl sm:text-3xl font-bold text-white mb-2">
+              Nome do Evento
+            </h2>
+            <p id="detalhe-data-extenso" class="text-sm text-betel-dourado/90 font-medium mb-6 pb-4 border-b border-betel-dourado/20">
+              Data do Evento
+            </p>
+
+            <div class="space-y-4 text-sm">
+              <div>
+                <span class="block text-xs uppercase tracking-wider text-betel-dourado/70">Ministério / Área</span>
+                <p id="mural-ministerio" class="font-semibold text-white text-base">—</p>
+              </div>
+              <div>
+                <span class="block text-xs uppercase tracking-wider text-betel-dourado/70">Líder Responsável</span>
+                <p id="mural-lider" class="font-semibold text-white text-base">—</p>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <span class="block text-xs uppercase tracking-wider text-betel-dourado/70">Horário</span>
+                  <p id="mural-horario" class="font-semibold text-white">—</p>
+                </div>
+                <div>
+                  <span class="block text-xs uppercase tracking-wider text-betel-dourado/70">Espaços Reservados</span>
+                  <p id="mural-local" class="font-semibold text-white">—</p>
+                </div>
+              </div>
+
+              <!-- Equipes de Apoio Solicitadas -->
+              <div class="bg-betel-vinhoEscuro/60 p-3.5 rounded-xl border border-betel-dourado/15">
+                <span class="block text-xs uppercase tracking-wider text-betel-dourado/70 mb-2">Equipes de Apoio Solicitadas</span>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="bg-betel-vinho/80 p-2 rounded-lg">
+                    <span class="block text-[11px] text-betel-dourado/75">Mídia</span>
+                    <span id="mural-midia" class="font-bold text-white text-xs">—</span>
+                  </div>
+                  <div class="bg-betel-vinho/80 p-2 rounded-lg">
+                    <span class="block text-[11px] text-betel-dourado/75">Louvor</span>
+                    <span id="mural-louvor" class="font-bold text-white text-xs">—</span>
+                  </div>
+                  <div class="bg-betel-vinho/80 p-2 rounded-lg">
+                    <span class="block text-[11px] text-betel-dourado/75">Diaconia</span>
+                    <span id="mural-diaconia" class="font-bold text-white text-xs">—</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mural de Briefing da Mídia -->
+              <div id="mural-bloco-midia" class="hidden bg-betel-vinhoEscuro/80 p-3.5 rounded-xl border border-betel-dourado/30 space-y-2 text-xs">
+                <span class="block text-xs font-bold uppercase tracking-wider text-betel-dourado">Briefing para Equipe de Mídia</span>
+                <p><span class="text-betel-dourado/70">Tema:</span> <strong id="mural-midia-tema" class="text-white">—</strong></p>
+                <p><span class="text-betel-dourado/70">Arte Instagram/WhatsApp:</span> <strong id="mural-midia-arte" class="text-white">—</strong></p>
+                <p><span class="text-betel-dourado/70">Banner Impresso:</span> <strong id="mural-midia-banner" class="text-white">—</strong></p>
+                <p><span class="text-betel-dourado/70">Formulário de Inscrição:</span> <strong id="mural-midia-inscricao" class="text-white">—</strong></p>
+                <div id="mural-midia-link-inscricao-wrap" class="hidden pt-1">
+                  <a id="mural-midia-link-inscricao" href="#" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-betel-dourado text-betel-vinho font-bold hover:bg-white transition">
+                    <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> Abrir Link de Inscrição
+                  </a>
+                </div>
+                <div id="mural-midia-info-wrap" class="hidden pt-1">
+                  <span class="block text-betel-dourado/70">Detalhes p/ Mídia:</span>
+                  <p id="mural-midia-info" class="text-white/95 whitespace-pre-line mt-0.5"></p>
+                </div>
+              </div>
+
+              <div>
+                <span class="block text-xs uppercase tracking-wider text-betel-dourado/70">Observações &amp; Escala</span>
+                <p id="mural-observacoes" class="text-betel-dourado/95 whitespace-pre-line bg-betel-vinhoEscuro/60 p-3 rounded-lg mt-1">
+                  Nenhuma observação registrada ainda.
+                </p>
+              </div>
+
+              <!-- Links Pós-Evento (Fotos e Vídeos) -->
+              <div id="mural-bloco-pos-evento" class="hidden bg-betel-vinhoEscuro/70 p-3.5 rounded-xl border border-betel-dourado/25 space-y-2">
+                <span class="block text-xs uppercase tracking-wider text-betel-dourado/80 font-bold">Galeria Pós-Evento</span>
+                <div class="flex flex-wrap gap-2">
+                  <a id="mural-link-fotos" href="#" target="_blank" rel="noopener noreferrer"
+                    class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-betel-dourado text-betel-vinho text-xs font-bold hover:bg-white transition">
+                    <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Ver Fotos do Evento
+                  </a>
+                  <a id="mural-link-videos" href="#" target="_blank" rel="noopener noreferrer"
+                    class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-betel-dourado text-betel-vinho text-xs font-bold hover:bg-white transition">
+                    <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg> Ver Vídeos do Evento
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-betel-dourado/20 flex items-center justify-between text-xs text-betel-dourado/75">
+            <span id="mural-atualizado">Sincronizado com a nuvem</span>
+            <button onclick="copiarLinkEvento()" class="underline hover:text-white font-medium">
+              Copiar link direto
+            </button>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Formulário de Preenchimento pelo Líder -->
+        <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="font-serif text-xl font-bold text-betel-vinho">Preencher / Atualizar Informações</h3>
+              <p class="text-xs text-stone-500">As alterações salvas aqui ficam imediatamente visíveis para toda a liderança.</p>
+            </div>
+            <div id="acoes-coord-evento" class="hidden flex flex-wrap gap-2">
+              <button id="btn-trancar-ficha" onclick="alternarTrancaFicha()" class="text-xs bg-stone-800 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-stone-900">
+                <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Trancar Ficha
+              </button>
+              <button onclick="abrirModalEditarEvento()" class="text-xs bg-amber-100 text-amber-900 px-3 py-1.5 rounded-lg font-semibold hover:bg-amber-200">
+                <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg> Mudar Data/Nome
+              </button>
+              <button onclick="excluirEventoAtual()" class="text-xs bg-red-100 text-red-800 px-3 py-1.5 rounded-lg font-semibold hover:bg-red-200">
+                <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg> Excluir
+              </button>
+            </div>
+          </div>
+
+          <!-- Aviso de Ficha Bloqueada -->
+          <div id="aviso-ficha-bloqueada" class="hidden mb-4 p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs sm:text-sm">
+            <strong><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Edição Bloqueada:</strong> <span id="texto-motivo-bloqueio">Este evento já foi encerrado e trancado pela coordenação para preservar o histórico.</span>
+          </div>
+
+          <form id="form-lider" onsubmit="salvarFichaLider(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Nome do Líder Responsável *</label>
+                <input type="text" id="input-lider" required placeholder="Ex: Pr. Carlos / Ana Paula"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100 disabled:text-stone-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Ministério / Departamento *</label>
+                <input type="text" id="input-ministerio" list="lista-ministerios" autocomplete="off" required placeholder="Ex: Louvor e Adoração"
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100 disabled:text-stone-500" />
+              </div>
+            </div>
+
+            <!-- Horário Estruturado (Início e Término para validação de conflitos) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Horário de Início *</label>
+                <input type="time" id="input-horario-inicio" required
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100 disabled:text-stone-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Horário de Término *</label>
+                <input type="time" id="input-horario-fim" required
+                  class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100 disabled:text-stone-500" />
+              </div>
+            </div>
+
+            <!-- Local do Evento com 3 Opções Fixas (Múltipla Escolha) -->
+            <div class="p-4 rounded-xl bg-stone-50 border border-stone-200">
+              <label class="block text-xs font-bold uppercase tracking-wider text-betel-vinho mb-2">
+                Local do Evento * <span class="font-normal normal-case text-stone-500">(marque um ou mais espaços)</span>
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <label class="flex items-center gap-2.5 p-2.5 rounded-lg border border-stone-300 bg-white cursor-pointer hover:border-betel-vinho">
+                  <input type="checkbox" name="evento-local" value="Templo" class="w-4 h-4 accent-[#582121]" />
+                  <span class="text-sm font-medium text-stone-800">Templo</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 rounded-lg border border-stone-300 bg-white cursor-pointer hover:border-betel-vinho">
+                  <input type="checkbox" name="evento-local" value="Salão de Festas" class="w-4 h-4 accent-[#582121]" />
+                  <span class="text-sm font-medium text-stone-800">Salão de Festas</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 rounded-lg border border-stone-300 bg-white cursor-pointer hover:border-betel-vinho">
+                  <input type="checkbox" name="evento-local" value="Quadra" class="w-4 h-4 accent-[#582121]" />
+                  <span class="text-sm font-medium text-stone-800">Quadra</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 3 Perguntas de Necessidade de Equipes -->
+            <div class="p-4 rounded-xl bg-betel-creme border border-stone-200 space-y-3">
+              <p class="text-xs font-bold uppercase tracking-wider text-betel-vinho">Solicitação de Equipes de Apoio</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Necessita de Mídia? *</label>
+                  <select id="input-midia" required onchange="alternarSecaoMidia()"
+                    class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100">
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Necessita de Equipe de Louvor? *</label>
+                  <select id="input-louvor" required
+                    class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100">
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Necessita de Diaconia? *</label>
+                  <select id="input-diaconia" required
+                    class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100">
+                    <option value="">Selecione...</option>
+                    <option value="Sim">Sim</option>
+                    <option value="Não">Não</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- BLOCO CONDICIONAL: INFORMAÇÕES ADICIONAIS PARA MÍDIA -->
+              <div id="secao-detalhes-midia" class="hidden mt-4 pt-4 border-t border-amber-300/70 space-y-3 bg-white p-4 rounded-xl border border-amber-200">
+                <div class="flex items-center gap-2">
+                  <span class="text-base"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg> </span>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-betel-vinho">Informações Adicionais para Mídia</h4>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Tema do Evento *</label>
+                  <input type="text" id="input-midia-tema" placeholder="Ex: Firmados na Rocha / Encontro de Casais"
+                    class="w-full px-3.5 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100" />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Precisa de arte para Instagram e WhatsApp?</label>
+                    <select id="input-midia-arte"
+                      class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100">
+                      <option value="">Selecione...</option>
+                      <option value="Sim">Sim</option>
+                      <option value="Não">Não</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Precisa de banner impresso p/ igreja?</label>
+                    <select id="input-midia-banner"
+                      class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100">
+                      <option value="">Selecione...</option>
+                      <option value="Sim">Sim</option>
+                      <option value="Não">Não</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Precisa de formulário de inscrição?</label>
+                    <select id="input-midia-inscricao" onchange="alternarCampoLinkInscricao()"
+                      class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100">
+                      <option value="">Selecione...</option>
+                      <option value="Sim">Sim</option>
+                      <option value="Não">Não</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div id="campo-link-inscricao" class="hidden p-3 rounded-lg bg-amber-50 border border-amber-200">
+                  <label class="block text-xs font-semibold text-amber-950 mb-1">
+                    <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg> Link do Formulário de Inscrição <span class="font-normal text-stone-600">(para o líder da mídia vincular quando criar)</span>
+                  </label>
+                  <input type="url" id="input-midia-link-inscricao" placeholder="https://forms.gle/..."
+                    class="w-full px-3.5 py-2 rounded-lg border border-amber-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100" />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Informações adicionais para a arte/divulgação</label>
+                  <textarea id="input-midia-info" rows="3"
+                    placeholder="Exemplo: Possui preletores convidados, será cobrado um valor por pessoa, público-alvo, versículo base..."
+                    class="w-full px-3.5 py-2 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-stone-700 mb-1">Detalhes Gerais, Escala e Observações</label>
+              <textarea id="input-observacoes" rows="3"
+                placeholder="Informe repertório, equipe escalada, recepção ou avisos gerais..."
+                class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100"></textarea>
+            </div>
+
+            <!-- REGISTRO PÓS-EVENTO (FOTOS E VÍDEOS) -->
+            <div class="p-4 rounded-xl bg-stone-50 border border-stone-200 space-y-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-wider text-betel-vinho"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Registro Pós-Evento (Após o Término)</p>
+                <p class="text-[11px] text-stone-500">Insira abaixo os links das pastas/álbuns (Google Drive, Fotos, YouTube) após a realização do evento.</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Link das Fotos do Evento</label>
+                  <input type="url" id="input-link-fotos" placeholder="https://drive.google.com/..."
+                    class="w-full px-3.5 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-stone-700 mb-1">Link dos Vídeos do Evento</label>
+                  <input type="url" id="input-link-videos" placeholder="https://youtube.com/... ou Drive"
+                    class="w-full px-3.5 py-2 rounded-lg border border-stone-300 bg-white focus:outline-none focus:border-betel-vinho text-sm disabled:bg-stone-100" />
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-3">
+              <button type="submit" id="btn-salvar-ficha"
+                class="w-full sm:w-auto px-6 py-3 rounded-xl bg-betel-vinho text-betel-dourado font-bold text-sm hover:bg-betel-vinhoEscuro shadow transition disabled:opacity-50 disabled:cursor-not-allowed">
+                <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg> Salvar Informações no Mural
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL 0: LOGIN (conta da equipe — mesmo login da Área de Membros) -->
+  <div id="modal-login-coord" class="hidden fixed inset-0 bg-black/55 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border-t-4 border-betel-vinho">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-serif text-xl font-bold text-betel-vinho"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Acesso da Equipe</h3>
+        <button onclick="fecharModalLoginCoord()" class="text-stone-400 hover:text-stone-700 font-bold">✕</button>
+      </div>
+      <p class="text-xs text-stone-500 mb-4">Entre com o e-mail e a senha da sua conta de membro da Igreja Batista Betel (a mesma da Área de Membros). Coordenadores entram no Modo Coordenador; líderes preenchem as fichas do seu ministério.</p>
+
+      <div id="erro-login-coord" class="hidden mb-3 p-2.5 rounded-lg bg-red-100 text-red-800 text-xs font-medium"></div>
+
+      <form onsubmit="autenticarCoordenador(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">E-mail *</label>
+          <input type="email" id="login-coord-usuario" required autocomplete="username" placeholder="seu.email@betelflamengo.com.br"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Senha *</label>
+          <input type="password" id="login-coord-senha" required autocomplete="current-password" placeholder="••••••••"
+            class="w-full px-3.5 py-2.5 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <p class="text-[11px] text-stone-500"><a href="../#equipe/esqueci" class="underline">Esqueci minha senha</a> · <a href="../#equipe/solicitar" class="underline">Solicitar acesso</a></p>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="fecharModalLoginCoord()" class="px-4 py-2 rounded-lg text-sm text-stone-600 hover:bg-stone-100">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-entrar-coord"
+            class="px-5 py-2 rounded-lg text-sm font-bold bg-betel-vinho text-betel-dourado hover:bg-betel-vinhoEscuro shadow">
+            Entrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 1: COORDENADOR (CRIAR / MOVER DATA DE EVENTO) -->
+  <div id="modal-coord" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+      <h3 id="modal-coord-titulo" class="font-serif text-xl font-bold text-betel-vinho mb-4">Novo Evento no Calendário</h3>
+      <form onsubmit="salvarEventoCoordenador(event)" class="space-y-4">
+        <input type="hidden" id="coord-evento-id" />
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Título do Evento *</label>
+          <input type="text" id="coord-titulo" required placeholder="Ex: ACAMPADENTRO"
+            class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Data do Evento *</label>
+          <input type="date" id="coord-data" required
+            class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Ministério Inicial (Opcional)</label>
+          <input type="text" id="coord-ministerio" list="lista-ministerios" autocomplete="off" placeholder="Ex: Louvor / Jovens"
+            class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="fecharModalCoord()" class="px-4 py-2 rounded-lg text-sm text-stone-600 hover:bg-stone-100">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-lg text-sm font-bold bg-betel-vinho text-betel-dourado hover:bg-betel-vinhoEscuro">
+            Salvar no Calendário
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: RESERVA DE ESPAÇOS -->
+  <div id="modal-reserva" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl my-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-serif text-xl font-bold text-amber-900"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg> Reservar Espaço / Templo</h3>
+        <button onclick="fecharModalReserva()" class="text-stone-400 hover:text-stone-700 font-bold text-lg">✕</button>
+      </div>
+
+      <form onsubmit="salvarReservaCoordenador(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Ministério Solicitante *</label>
+            <input type="text" id="res-ministerio" list="lista-ministerios" autocomplete="off" required placeholder="Ex: Louvor, Louvart, Diaconia..."
+              class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-amber-700" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Finalidade *</label>
+            <input type="text" id="res-motivo" required placeholder="Ex: Ensaio / Reunião"
+              class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-amber-700" />
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+          <label class="block text-xs font-bold uppercase tracking-wider text-amber-900 mb-2">
+            Espaços a Reservar * <span class="font-normal normal-case text-stone-600">(pode marcar mais de um)</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-amber-300 bg-white cursor-pointer hover:bg-amber-50">
+              <input type="checkbox" name="res-espaco" value="Templo" class="w-4 h-4 accent-amber-800" />
+              <span class="text-xs font-semibold text-stone-800">Templo</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-amber-300 bg-white cursor-pointer hover:bg-amber-50">
+              <input type="checkbox" name="res-espaco" value="Salão de Festas" class="w-4 h-4 accent-amber-800" />
+              <span class="text-xs font-semibold text-stone-800">Salão de Festas</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 rounded-lg border border-amber-300 bg-white cursor-pointer hover:bg-amber-50">
+              <input type="checkbox" name="res-espaco" value="Quadra" class="w-4 h-4 accent-amber-800" />
+              <span class="text-xs font-semibold text-stone-800">Quadra</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Horário Início *</label>
+            <input type="time" id="res-inicio" required value="19:30"
+              class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-amber-700" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Horário Término *</label>
+            <input type="time" id="res-fim" required value="21:00"
+              class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-amber-700" />
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-stone-50 border border-stone-200 space-y-3">
+          <label class="block text-xs font-bold uppercase tracking-wider text-stone-700">Frequência da Reserva</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+              <input type="radio" name="res-tipo" value="unica" checked onchange="alternarTipoReserva()" class="accent-amber-800" />
+              Data Específica
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+              <input type="radio" name="res-tipo" value="massa" onchange="alternarTipoReserva()" class="accent-amber-800" />
+              Reserva em Massa (Recorrente)
+            </label>
+          </div>
+
+          <div id="bloco-res-unica">
+            <label class="block text-xs font-semibold text-stone-700 mb-1">Data da Reserva *</label>
+            <input type="date" id="res-data-unica"
+              class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm bg-white" />
+          </div>
+
+          <div id="bloco-res-massa" class="hidden space-y-3 pt-1">
+            <div>
+              <label class="block text-xs font-semibold text-stone-700 mb-1">Dia da Semana *</label>
+              <select id="res-dia-semana" class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm bg-white">
+                <option value="1">Todas as Segundas-feiras</option>
+                <option value="2">Todas as Terças-feiras</option>
+                <option value="3">Todas as Quartas-feiras</option>
+                <option value="4">Todas as Quintas-feiras</option>
+                <option value="5">Todas as Sextas-feiras</option>
+                <option value="6">Todos os Sábados</option>
+                <option value="0">Todos os Domingos</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">A partir de *</label>
+                <input type="date" id="res-data-inicio-massa"
+                  class="w-full px-3 py-2 rounded-lg border border-stone-300 text-sm bg-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-stone-700 mb-1">Até o dia *</label>
+                <input type="date" id="res-data-fim-massa"
+                  class="w-full px-3 py-2 rounded-lg border border-stone-300 text-sm bg-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="fecharModalReserva()" class="px-4 py-2 rounded-lg text-sm text-stone-600 hover:bg-stone-100">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-salvar-reserva"
+            class="px-5 py-2 rounded-lg text-sm font-bold bg-amber-800 text-white hover:bg-amber-900 shadow">
+            Confirmar Reserva(s)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: DETALHES DA RESERVA -->
+  <div id="modal-detalhe-reserva" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border-t-4 border-amber-700">
+      <div class="flex items-center justify-between mb-3">
+        <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase">
+          Reserva de Espaço
+        </span>
+        <button onclick="fecharModalDetalheReserva()" class="text-stone-400 hover:text-stone-700 font-bold">✕</button>
+      </div>
+      <h3 id="det-res-titulo" class="font-serif text-xl font-bold text-stone-900 mb-1">Louvor — Ensaio</h3>
+      <p id="det-res-data" class="text-sm text-stone-500 mb-4">Data</p>
+
+      <div class="space-y-2.5 text-sm bg-stone-50 p-4 rounded-xl border border-stone-200 mb-5">
+        <p><strong>Espaço(s):</strong> <span id="det-res-espacos" class="text-amber-900 font-semibold">—</span></p>
+        <p><strong>Horário:</strong> <span id="det-res-horario">—</span></p>
+        <p><strong>Ministério:</strong> <span id="det-res-ministerio">—</span></p>
+        <p><strong>Finalidade:</strong> <span id="det-res-motivo">—</span></p>
+      </div>
+
+      <div id="acoes-coord-reserva" class="hidden flex flex-col gap-2">
+        <button onclick="excluirReservaUnica()" class="w-full py-2 rounded-lg bg-red-100 text-red-800 text-xs font-bold hover:bg-red-200">
+          <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg> Excluir Apenas Esta Reserva
+        </button>
+        <button id="btn-excluir-lote" onclick="excluirReservaLote()" class="hidden w-full py-2 rounded-lg bg-red-700 text-white text-xs font-bold hover:bg-red-800">
+          <svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg> Excluir Todas as Reservas Desta Série (Em Massa)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: ALERTA DE CONFLITO DE ESPAÇO E HORÁRIO -->
+  <div id="modal-conflito" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border-t-4 border-red-600">
+      <div class="flex items-center gap-2.5 mb-3">
+        <span class="text-2xl"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg> </span>
+        <h3 class="font-serif text-xl font-bold text-red-800">Conflito de Espaço e Horário</h3>
+      </div>
+      <p class="text-xs sm:text-sm text-stone-600 mb-3">
+        Já existe(m) evento(s) ou reserva(s) utilizando o mesmo espaço na data e faixa de horário informada:
+      </p>
+      <div id="lista-conflitos-encontrados" class="max-h-56 overflow-y-auto space-y-2 bg-red-50/70 p-3.5 rounded-xl border border-red-200 text-xs sm:text-sm mb-5"></div>
+      <div class="flex justify-end">
+        <button onclick="fecharModalConflito()" class="px-5 py-2.5 rounded-xl bg-red-700 text-white font-bold text-xs sm:text-sm hover:bg-red-800 shadow">
+          Entendi, vou ajustar o horário/local
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: GESTÃO DE COORDENADORES (somente MASTER) -->
+  <div id="modal-gestao-coord" class="hidden fixed inset-0 bg-black/55 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl my-8 border-t-4 border-stone-800">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-serif text-xl font-bold text-stone-900"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg> Gestão de Coordenadores</h3>
+          <p class="text-xs text-stone-500">Dê acesso de coordenação a uma conta da equipe, ligue coordenadores antigos à conta da pessoa ou ative/desative acessos.</p>
+        </div>
+        <button onclick="fecharModalGestaoCoordenadores()" class="text-stone-400 hover:text-stone-700 font-bold text-lg">✕</button>
+      </div>
+
+      <!-- Formulário para Novo Coordenador -->
+      <form onsubmit="criarNovoCoordenador(event)" class="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3 mb-5">
+        <p class="text-xs font-bold uppercase tracking-wider text-betel-vinho">+ Adicionar Novo Coordenador</p>
+        <div>
+          <label class="block text-[11px] font-semibold text-stone-700 mb-1">Conta da equipe *</label>
+          <select id="novo-coord-conta" required class="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white text-xs focus:outline-none focus:border-betel-vinho"></select>
+          <p class="text-[11px] text-stone-500 mt-1">A pessoa entra com o próprio e-mail e senha. Se ela ainda não tem conta, crie em Área de Membros → Usuários.</p>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" id="btn-criar-coord"
+            class="px-4 py-2 rounded-lg bg-betel-vinho text-betel-dourado text-xs font-bold hover:bg-betel-vinhoEscuro shadow-sm">
+            Tornar Coordenador
+          </button>
+        </div>
+      </form>
+
+      <!-- Lista de Coordenadores -->
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wider text-stone-600 mb-2">Coordenadores Cadastrados</p>
+        <div id="lista-coordenadores-cadastrados" class="space-y-2 max-h-72 overflow-y-auto"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL 6: ALTERAR SENHA (conta da equipe) -->
+  <div id="modal-alterar-senha" class="hidden fixed inset-0 bg-black/55 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border-t-4 border-amber-700">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-serif text-xl font-bold text-betel-vinho"><svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9m-3 3 3 3m-6 0 2 2"/></svg> Alterar Minha Senha</h3>
+        <button onclick="fecharModalAlterarSenha()" class="text-stone-400 hover:text-stone-700 font-bold text-lg">✕</button>
+      </div>
+      <p class="text-xs text-stone-500 mb-4">
+        Atualize a senha de <strong id="alterar-senha-usuario-label" class="text-stone-800">Coordenador</strong>. A nova senha vale também para a Área de Membros.
+      </p>
+
+      <div id="erro-alterar-senha" class="hidden mb-3 p-2.5 rounded-lg bg-red-100 text-red-800 text-xs font-medium"></div>
+
+      <form onsubmit="salvarNovaSenhaCoordenador(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Senha Atual *</label>
+          <input type="password" id="senha-atual-coord" required autocomplete="current-password" placeholder="Digite sua senha atual"
+            class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Nova Senha *</label>
+          <input type="password" id="nova-senha-coord" required autocomplete="new-password" placeholder="Mínimo 10 caracteres, letras e números"
+            class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">Confirmar Nova Senha *</label>
+          <input type="password" id="confirmar-nova-senha-coord" required autocomplete="new-password" placeholder="Repita a nova senha"
+            class="w-full px-3.5 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:border-betel-vinho" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="fecharModalAlterarSenha()" class="px-4 py-2 rounded-lg text-sm text-stone-600 hover:bg-stone-100">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-salvar-nova-senha"
+            class="px-5 py-2 rounded-lg text-sm font-bold bg-betel-vinho text-betel-dourado hover:bg-betel-vinhoEscuro shadow">
+            Salvar Senha
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="ag-rodape">
+    <img src="../img/logo.png" alt="Igreja Batista Betel">
+    <p>Betel é casa de Deus. · <a href="../">Voltar ao site</a> · <a href="../#equipe">Área de Membros</a></p>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // CONFIGURAÇÃO DO SUPABASE (projeto central da Betel)
+    // Mesma conta e mesma sessão da Área de Membros. As permissões são
+    // conferidas no banco (RLS e gatilhos); a tela só reflete o que é permitido.
+    // =========================================================================
+    const CFG_BETEL = window.BETEL_SUPABASE || {};
+    const db = window.supabase.createClient(CFG_BETEL.url, CFG_BETEL.anonKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'betel-equipe' }
+    });
+
+    // Estado da Aplicação
+    let eventos = [];
+    let reservas = [];
+    const _d = new Date();
+    let anoAtual = _d.getFullYear();
+    let mesAtual = _d.getMonth(); // 0 = Janeiro, 1 = Fevereiro
+    let modoCoordenador = false;
+    let coordenadorAtual = null;
+    let permissoes = null;        // resultado de agenda_minhas_permissoes()
+    let eventoSelecionado = null;
+    let reservaSelecionada = null;
+
+    const NOMES_MESES = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+
+    // ---------- utilidades de segurança e formatação ----------
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function urlSegura(u) {
+      try { const x = new URL(String(u || '').trim()); return ['http:', 'https:'].includes(x.protocol) ? x.href : ''; } catch (_) { return ''; }
+    }
+    function hm(v) { return v ? String(v).slice(0, 5) : ''; } // colunas time devolvem HH:MM:SS
+    function hojeLocalISO() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function fimDoSemestre(dataISO) {
+      const [a, m] = String(dataISO).split('-').map(Number);
+      return m <= 6 ? `${a}-06-30` : `${a}-12-31`;
+    }
+    // Atualização/exclusão bloqueada pelo RLS não dá erro: volta sem linhas. Aqui vira erro claro.
+    function semEfeito(r) {
+      if (!r.error && Array.isArray(r.data) && r.data.length === 0) {
+        return { ...r, error: { code: '42501', message: 'você não tem permissão para esta alteração (ou o registro não existe mais).' } };
+      }
+      return r;
+    }
+    // Erros vindos do banco: conflito de agenda (modal original) e permissão
+    function tratarErroAgenda(error) {
+      if (!error) return false;
+      if (error.code === '23P01') {
+        let lista = [];
+        try { lista = JSON.parse(error.details || '[]'); } catch (_) {}
+        if (lista.length) { abrirModalConflito(lista); return true; }
+      }
+      if (error.code === '42501' || error.code === 'PGRST301' || /permission denied|row-level security/i.test(error.message || '')) {
+        mostrarAviso('Sem permissão: ' + (error.message && !/permission denied|row-level/i.test(error.message) ? error.message : 'entre com uma conta de coordenação ou do líder do ministério.'), 'erro');
+        return true;
+      }
+      return false;
+    }
+
+    // ---------- permissões da conta logada ----------
+    async function carregarPermissoes() {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { permissoes = null; modoCoordenador = false; coordenadorAtual = null; return; }
+      let { data, error } = await db.rpc('agenda_minhas_permissoes');
+      // logo após o login a sessão pode levar um instante para valer em todas as chamadas: tenta mais uma vez
+      if (error) { await new Promise(r => setTimeout(r, 500)); ({ data, error } = await db.rpc('agenda_minhas_permissoes')); }
+      if (error) { permissoes = null; modoCoordenador = false; coordenadorAtual = null; mostrarAviso('Não foi possível conferir o seu acesso: ' + error.message, 'erro'); return; }
+      permissoes = data;
+      modoCoordenador = data.status === 'ok' && data.coordenador === true;
+      coordenadorAtual = data.status === 'ok' ? { nome: data.nome } : null;
+    }
+    function podeEditarFicha(ev) {
+      if (!permissoes || permissoes.status !== 'ok') return false;
+      if (permissoes.coordenador) return true;
+      return !!ev.ministerio_id && (permissoes.ministerios_lider || []).some(m => m.id === ev.ministerio_id);
+    }
+
+    async function carregarListaMinisterios() {
+      const { data } = await db.from('ministerios').select('nome').order('ordem');
+      document.getElementById('lista-ministerios').innerHTML = (data || []).map(m => `<option value="${esc(m.nome)}"></option>`).join('');
+    }
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Promise.all([carregarEventos(), carregarReservas(), carregarPermissoes(), carregarListaMinisterios()]);
+      atualizarInterfaceCoordenador(false);
+
+      const params = new URLSearchParams(window.location.search);
+      const eventoIdParam = params.get('evento');
+      if (eventoIdParam) {
+        const encontrado = eventos.find(e => String(e.id) === String(eventoIdParam));
+        if (encontrado) {
+          const [ano, mes] = String(encontrado.data).split('-').map(Number);
+          anoAtual = ano;
+          mesAtual = mes - 1;
+          renderizarCalendario();
+          abrirPaginaEvento(encontrado.id);
+          return;
+        }
+      }
+      renderizarCalendario();
+    });
+
+    // Sessão encerrada em outra aba (ex.: "Sair" na Área de Membros)
+    db.auth.onAuthStateChange(async (evento) => {
+      if (evento === 'SIGNED_OUT' && permissoes) {
+        await carregarPermissoes(); atualizarInterfaceCoordenador();
+        const ev = eventoSelecionado; if (ev) abrirPaginaEvento(ev.id);
+      }
+    });
+
+    function mostrarAviso(texto, tipo = 'info') {
+      const el = document.getElementById('status-banner');
+      el.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-emerald-100', 'text-emerald-800', 'bg-amber-100', 'text-amber-800');
+      if (tipo === 'erro') el.classList.add('bg-red-100', 'text-red-800');
+      else if (tipo === 'sucesso') el.classList.add('bg-emerald-100', 'text-emerald-800');
+      else el.classList.add('bg-amber-100', 'text-amber-800');
+      el.textContent = texto;
+      if (tipo === 'sucesso') {
+        setTimeout(() => el.classList.add('hidden'), 4500);
+      }
+    }
+
+    async function carregarEventos() {
+      const { data, error } = await db.from('eventos').select('*').order('data', { ascending: true });
+      if (error) {
+        console.error(error);
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao carregar eventos: ' + error.message, 'erro');
+        return;
+      }
+      eventos = data || [];
+    }
+
+    async function carregarReservas() {
+      const { data, error } = await db.from('reservas').select('*').order('data', { ascending: true });
+      if (error) {
+        console.warn('Tabela reservas ainda não criada ou erro de leitura:', error.message);
+        reservas = [];
+        return;
+      }
+      reservas = data || [];
+    }
+
+    // =========================================================================
+    // MOTOR DE DETECÇÃO DE CONFLITOS DE ESPAÇO E HORÁRIO
+    // =========================================================================
+    function horaParaMinutos(hhmm) {
+      if (!hhmm) return null;
+      const partes = hhmm.trim().replace('h', ':').split(':');
+      if (partes.length < 2) return null;
+      const h = parseInt(partes[0], 10);
+      const m = parseInt(partes[1], 10) || 0;
+      if (isNaN(h) || isNaN(m)) return null;
+      return h * 60 + m;
+    }
+
+    function extrairFaixaHorarioEvento(ev) {
+      if (ev.horario_inicio && ev.horario_fim) {
+        return {
+          inicio: horaParaMinutos(ev.horario_inicio),
+          fim: horaParaMinutos(ev.horario_fim),
+          texto: `${ev.horario_inicio} às ${ev.horario_fim}`
+        };
+      }
+      if (ev.horario) {
+        const matches = ev.horario.match(/(\d{1,2})[:h](\d{2})?/g);
+        if (matches && matches.length >= 2) {
+          return {
+            inicio: horaParaMinutos(matches[0]),
+            fim: horaParaMinutos(matches[1]),
+            texto: ev.horario
+          };
+        }
+      }
+      return { inicio: null, fim: null, texto: ev.horario || 'Horário não especificado' };
+    }
+
+    function intervalosSobrepoem(iniA, fimA, iniB, fimB) {
+      if (iniA === null || fimA === null || iniB === null || fimB === null) return false;
+      return iniA < fimB && fimA > iniB;
+    }
+
+    function verificarConflitos({ dataISO, espacosLista, horaInicioStr, horaFimStr, ignorarEventoId = null }) {
+      const iniNovo = horaParaMinutos(horaInicioStr);
+      const fimNovo = horaParaMinutos(horaFimStr);
+      const conflitos = [];
+
+      // 1. Verificar contra outros Eventos na mesma data
+      eventos.forEach(ev => {
+        if (ev.data !== dataISO) return;
+        if (ignorarEventoId && String(ev.id) === String(ignorarEventoId)) return;
+        if (!ev.local) return;
+
+        const locaisEv = ev.local.split(',').map(s => s.trim());
+        const espacosEmComum = espacosLista.filter(esp => locaisEv.includes(esp));
+        if (espacosEmComum.length === 0) return;
+
+        const faixaEv = extrairFaixaHorarioEvento(ev);
+        if (intervalosSobrepoem(iniNovo, fimNovo, faixaEv.inicio, faixaEv.fim)) {
+          const [a, m, d] = dataISO.split('-');
+          conflitos.push({
+            tipo: 'Evento Oficial',
+            titulo: ev.titulo,
+            dataFmt: `${d}/${m}/${a}`,
+            espacos: espacosEmComum.join(', '),
+            horario: faixaEv.texto
+          });
+        }
+      });
+
+      // 2. Verificar contra Reservas de Espaços na mesma data
+      reservas.forEach(res => {
+        if (res.data !== dataISO) return;
+        if (!res.espacos) return;
+
+        const locaisRes = res.espacos.split(',').map(s => s.trim());
+        const espacosEmComum = espacosLista.filter(esp => locaisRes.includes(esp));
+        if (espacosEmComum.length === 0) return;
+
+        const iniRes = horaParaMinutos(res.horario_inicio);
+        const fimRes = horaParaMinutos(res.horario_fim);
+        if (intervalosSobrepoem(iniNovo, fimNovo, iniRes, fimRes)) {
+          const [a, m, d] = dataISO.split('-');
+          conflitos.push({
+            tipo: 'Reserva de Espaço',
+            titulo: `${res.ministerio} (${res.motivo})`,
+            dataFmt: `${d}/${m}/${a}`,
+            espacos: espacosEmComum.join(', '),
+            horario: `${res.horario_inicio} às ${res.horario_fim}`
+          });
+        }
+      });
+
+      return conflitos;
+    }
+
+    function abrirModalConflito(listaConflitos) {
+      const container = document.getElementById('lista-conflitos-encontrados');
+      container.innerHTML = listaConflitos.map(c => `
+        <div class="p-2.5 rounded-lg bg-white border border-red-200">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase text-red-700">${esc(c.tipo)}</span>
+            <span class="text-[11px] font-semibold text-stone-500">${esc(c.dataFmt)}</span>
+          </div>
+          <p class="font-bold text-stone-900 mt-0.5">${esc(c.titulo)}</p>
+          <p class="text-xs text-stone-600 mt-0.5">
+            <strong>Espaço:</strong> ${esc(c.espacos)} • <strong>Horário:</strong> ${esc(c.horario)}
+          </p>
+        </div>
+      `).join('');
+      document.getElementById('modal-conflito').classList.remove('hidden');
+    }
+
+    function fecharModalConflito() {
+      document.getElementById('modal-conflito').classList.add('hidden');
+    }
+
+    // =========================================================================
+    // BLOQUEIO DE EDIÇÃO APÓS O EVENTO
+    // =========================================================================
+    function verificarStatusBloqueioEvento(ev) {
+      const hojeISO = hojeLocalISO();
+      const dataPassou = String(ev.data) < hojeISO;
+      const trancadoManual = ev.bloqueado === true;
+
+      if (modoCoordenador) {
+        return { bloqueadoParaUsuario: false, liberarPosEvento: true, trancadoManual, dataPassou };
+      }
+
+      if (!podeEditarFicha(ev)) {
+        return {
+          bloqueadoParaUsuario: true,
+          liberarPosEvento: false,
+          motivo: permissoes && permissoes.status === 'ok'
+            ? 'Você pode consultar esta ficha, mas só o líder do ministério responsável ou a coordenação podem preenchê-la.'
+            : 'Para preencher esta ficha, clique em "Entrar" no topo e use a sua conta da equipe. Somente o líder do ministério responsável e a coordenação podem editar.'
+        };
+      }
+
+      if (trancadoManual) {
+        return {
+          bloqueadoParaUsuario: true,
+          liberarPosEvento: true,
+          motivo: 'Esta ficha foi trancada pela coordenação. Os dados de planejamento estão bloqueados, mas os campos de Fotos e Vídeos permanecem liberados para registro pós-evento.'
+        };
+      }
+
+      if (dataPassou) {
+        return {
+          bloqueadoParaUsuario: true,
+          liberarPosEvento: true,
+          motivo: 'A data deste evento já passou. Os dados de planejamento estão bloqueados, mas os campos de Fotos e Vídeos permanecem liberados para registro pós-evento.'
+        };
+      }
+
+      return { bloqueadoParaUsuario: false, liberarPosEvento: true, trancadoManual, dataPassou };
+    }
+
+    function aplicarBloqueioFormulario(bloquear, liberarPosEvento = false) {
+      const form = document.getElementById('form-lider');
+      const elementos = form.querySelectorAll('input, select, textarea, button[type="submit"]');
+      elementos.forEach(el => {
+        if (bloquear && liberarPosEvento && (el.id === 'input-link-fotos' || el.id === 'input-link-videos' || el.id === 'btn-salvar-ficha')) {
+          el.disabled = false;
+        } else {
+          el.disabled = bloquear;
+        }
+      });
+    }
+
+    async function alternarTrancaFicha() {
+      if (!eventoSelecionado || !modoCoordenador) return;
+      const novoEstado = !eventoSelecionado.bloqueado;
+      const acaoTexto = novoEstado ? 'trancar' : 'destrancar';
+
+      if (!confirm(`Deseja ${acaoTexto} a edição desta ficha para os líderes?`)) return;
+
+      const { error } = await db
+        .from('eventos')
+        .update({ bloqueado: novoEstado })
+        .eq('id', eventoSelecionado.id).select('id').then(semEfeito);
+
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao atualizar bloqueio (verifique se a coluna bloqueado foi criada no SQL): ' + error.message, 'erro');
+        return;
+      }
+
+      await carregarEventos();
+      if (eventoSelecionado) abrirPaginaEvento(eventoSelecionado.id);
+      mostrarAviso(novoEstado ? 'Ficha trancada com sucesso!' : 'Ficha destrancada para edição.', 'sucesso');
+    }
+
+    // =========================================================================
+    // CALENDÁRIO MENSAL
+    // =========================================================================
+    function mudarMes(delta) {
+      mesAtual += delta;
+      if (mesAtual < 0) { mesAtual = 11; anoAtual--; }
+      if (mesAtual > 11) { mesAtual = 0; anoAtual++; }
+      renderizarCalendario();
+    }
+
+    function irParaDataInicial() {
+      const hoje = new Date();
+      anoAtual = hoje.getFullYear();
+      mesAtual = hoje.getMonth();
+      renderizarCalendario();
+    }
+
+    function renderizarCalendario() {
+      document.getElementById('titulo-mes-ano').textContent = `${NOMES_MESES[mesAtual]} ${anoAtual}`;
+      const grade = document.getElementById('grade-dias');
+      grade.innerHTML = '';
+
+      const primeiroDiaSemana = new Date(anoAtual, mesAtual, 1).getDay();
+      const totalDiasMes = new Date(anoAtual, mesAtual + 1, 0).getDate();
+
+      for (let i = 0; i < primeiroDiaSemana; i++) {
+        const vazia = document.createElement('div');
+        vazia.className = 'calendar-cell bg-stone-50/70 p-2';
+        grade.appendChild(vazia);
+      }
+
+      const mesStr = String(mesAtual + 1).padStart(2, '0');
+      const eventosDoMes = [];
+      const reservasDoMes = [];
+
+      const feriadosAnoCorrente = obterFeriadosAno(anoAtual);
+
+      for (let dia = 1; dia <= totalDiasMes; dia++) {
+        const diaStr = String(dia).padStart(2, '0');
+        const dataISO = `${anoAtual}-${mesStr}-${diaStr}`;
+        const feriadoNome = feriadosAnoCorrente[dataISO];
+        const eventosDia = eventos.filter(e => e.data === dataISO);
+        const reservasDia = reservas.filter(r => r.data === dataISO);
+
+        eventosDoMes.push(...eventosDia);
+        reservasDoMes.push(...reservasDia);
+
+        const celula = document.createElement('div');
+        celula.className = `calendar-cell p-1.5 sm:p-2 flex flex-col justify-between ${feriadoNome ? 'bg-red-50/40' : 'bg-white'} hover:bg-betel-creme`;
+
+        const topo = document.createElement('div');
+        topo.className = 'flex items-center justify-between';
+        topo.innerHTML = `<span class="text-xs sm:text-sm font-bold ${feriadoNome ? 'text-red-700' : (eventosDia.length ? 'text-betel-vinho' : 'text-stone-500')}">${dia}</span>`;
+
+        if (modoCoordenador) {
+          const btnGroup = document.createElement('div');
+          btnGroup.className = 'flex gap-1';
+
+          const btnAddRes = document.createElement('button');
+          btnAddRes.innerHTML = '<svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>';
+          btnAddRes.title = 'Reservar espaço neste dia';
+          btnAddRes.className = 'text-[10px] px-1 py-0.5 rounded bg-amber-100 hover:bg-amber-300';
+          btnAddRes.onclick = () => abrirModalReserva(dataISO);
+
+          const btnAddEv = document.createElement('button');
+          btnAddEv.textContent = '+';
+          btnAddEv.title = 'Adicionar evento neste dia';
+          btnAddEv.className = 'text-xs px-1.5 py-0.5 rounded bg-stone-200 hover:bg-betel-vinho hover:text-white font-bold';
+          btnAddEv.onclick = () => abrirModalNovoEvento(dataISO);
+
+          btnGroup.appendChild(btnAddRes);
+          btnGroup.appendChild(btnAddEv);
+          topo.appendChild(btnGroup);
+        }
+
+        celula.appendChild(topo);
+        if (feriadoNome) {
+          const badgeFeriado = document.createElement('div');
+          badgeFeriado.className = 'text-[9px] sm:text-[10px] text-red-700 font-semibold bg-red-100 px-1 rounded truncate mt-0.5';
+          badgeFeriado.textContent = `★ ${feriadoNome}`;
+          badgeFeriado.title = feriadoNome;
+          celula.appendChild(badgeFeriado);
+        }
+
+        const listaPills = document.createElement('div');
+        listaPills.className = 'mt-1 space-y-1';
+
+        eventosDia.forEach(ev => {
+          const pill = document.createElement('button');
+          pill.className = 'w-full text-left px-2 py-1 rounded bg-betel-vinho text-betel-dourado text-[11px] sm:text-xs font-semibold leading-tight hover:bg-betel-vinhoEscuro shadow-sm transition truncate block';
+          pill.textContent = ev.titulo; if (ev.bloqueado) pill.classList.add('ag-trancada');
+          pill.title = `${ev.titulo} — Clique para abrir`;
+          pill.onclick = () => abrirPaginaEvento(ev.id);
+          listaPills.appendChild(pill);
+        });
+
+        reservasDia.forEach(res => {
+          const pillRes = document.createElement('button');
+          pillRes.className = 'w-full text-left px-1.5 py-0.5 rounded bg-amber-100 border border-amber-400 text-amber-950 text-[10px] sm:text-[11px] font-medium leading-tight hover:bg-amber-200 transition truncate block';
+          pillRes.textContent = `${res.ministerio}: ${res.espacos}`;
+          pillRes.title = `Reserva (${res.espacos}) • ${hm(res.horario_inicio)} às ${hm(res.horario_fim)} • ${res.motivo}`;
+          pillRes.onclick = () => abrirDetalheReserva(res.id);
+          listaPills.appendChild(pillRes);
+        });
+
+        celula.appendChild(listaPills);
+        grade.appendChild(celula);
+      }
+
+      // Lista resumida de Eventos
+      const listaEvEl = document.getElementById('lista-eventos-mes');
+      if (eventosDoMes.length === 0) {
+        listaEvEl.innerHTML = `<p class="text-sm text-stone-500">Nenhum evento oficial cadastrado para ${NOMES_MESES[mesAtual]} de ${anoAtual}.</p>`;
+      } else {
+        listaEvEl.innerHTML = eventosDoMes.map(ev => {
+          const [a, m, d] = ev.data.split('-');
+          const statusPreenchido = ev.lider && ev.lider.trim() !== ''
+            ? `<span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">Líder: ${esc(ev.lider)}</span>`
+            : `<span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">Aguardando líder</span>`;
+
+          return `
+            <div onclick="abrirPaginaEvento('${esc(ev.id)}')"
+              class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border border-stone-200 hover:border-betel-vinho cursor-pointer transition bg-betel-creme/50">
+              <div class="flex items-center gap-3">
+                <span class="px-2.5 py-1 rounded-md bg-betel-vinho text-betel-dourado font-bold text-xs">${d}/${m}</span>
+                <div>
+                  <p class="font-bold text-sm text-betel-vinho">${ev.bloqueado ? '<svg class="ag-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> ' : ''}${esc(ev.titulo)}</p>
+                  <p class="text-xs text-stone-500">${esc(ev.local || 'Local a definir')} ${ev.horario ? '• ' + esc(ev.horario) : ''}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                ${statusPreenchido}
+                <span class="text-xs font-semibold text-betel-vinho">Abrir →</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Lista resumida de Reservas
+      const listaResEl = document.getElementById('lista-reservas-mes');
+      if (reservasDoMes.length === 0) {
+        listaResEl.innerHTML = `<p class="text-sm text-stone-500">Nenhuma reserva de espaço registrada para ${NOMES_MESES[mesAtual]} de ${anoAtual}.</p>`;
+      } else {
+        listaResEl.innerHTML = reservasDoMes.map(res => {
+          const [a, m, d] = res.data.split('-');
+          return `
+            <div onclick="abrirDetalheReserva('${esc(res.id)}')"
+              class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border border-amber-200 hover:border-amber-600 cursor-pointer transition bg-amber-50/40">
+              <div class="flex items-center gap-3">
+                <span class="px-2.5 py-1 rounded-md bg-amber-800 text-white font-bold text-xs">${d}/${m}</span>
+                <div>
+                  <p class="font-bold text-sm text-amber-950">${esc(res.ministerio)} — ${esc(res.motivo)}</p>
+                  <p class="text-xs text-stone-600"><strong>${esc(res.espacos)}</strong> • ${esc(hm(res.horario_inicio))} às ${esc(hm(res.horario_fim))}</p>
+                </div>
+              </div>
+              <span class="text-xs font-semibold text-amber-900">Ver →</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // =========================================================================
+    // CONTROLES CONDICIONAIS DA MÍDIA NA FICHA DO EVENTO
+    // =========================================================================
+    function alternarSecaoMidia() {
+      const precisaMidia = document.getElementById('input-midia').value === 'Sim';
+      const secao = document.getElementById('secao-detalhes-midia');
+      const inputTema = document.getElementById('input-midia-tema');
+
+      secao.classList.toggle('hidden', !precisaMidia);
+      inputTema.required = precisaMidia;
+
+      if (precisaMidia) {
+        alternarCampoLinkInscricao();
+      }
+    }
+
+    function alternarCampoLinkInscricao() {
+      const precisaInscricao = document.getElementById('input-midia-inscricao').value === 'Sim';
+      document.getElementById('campo-link-inscricao').classList.toggle('hidden', !precisaInscricao);
+    }
+
+    // =========================================================================
+    // NAVEGAÇÃO E FICHA DO EVENTO
+    // =========================================================================
+    function abrirPaginaEvento(id) {
+      const ev = eventos.find(e => String(e.id) === String(id));
+      if (!ev) return;
+      eventoSelecionado = ev;
+
+      const url = new URL(window.location);
+      url.searchParams.set('evento', ev.id);
+      window.history.pushState({}, '', url);
+
+      const [ano, mes, dia] = ev.data.split('-');
+      document.getElementById('detalhe-titulo').textContent = ev.titulo;
+      document.getElementById('detalhe-data-extenso').textContent = `Data: ${dia}/${mes}/${ano}`;
+
+      document.getElementById('mural-ministerio').textContent = ev.ministerio || 'Não informado';
+      document.getElementById('mural-lider').textContent = ev.lider || 'Aguardando preenchimento';
+      document.getElementById('mural-horario').textContent = ev.horario || 'A definir';
+      document.getElementById('mural-local').textContent = ev.local || 'A definir';
+
+      document.getElementById('mural-midia').textContent = ev.necessita_midia || '—';
+      document.getElementById('mural-louvor').textContent = ev.necessita_louvor || '—';
+      document.getElementById('mural-diaconia').textContent = ev.necessita_diaconia || '—';
+      document.getElementById('mural-observacoes').textContent = ev.observacoes || 'Nenhuma observação registrada ainda.';
+
+      const blocoMuralMidia = document.getElementById('mural-bloco-midia');
+      if (ev.necessita_midia === 'Sim') {
+        blocoMuralMidia.classList.remove('hidden');
+        document.getElementById('mural-midia-tema').textContent = ev.midia_tema || 'Não informado';
+        document.getElementById('mural-midia-arte').textContent = ev.midia_arte || '—';
+        document.getElementById('mural-midia-banner').textContent = ev.midia_banner || '—';
+        document.getElementById('mural-midia-inscricao').textContent = ev.midia_inscricao || '—';
+
+        const linkInscWrap = document.getElementById('mural-midia-link-inscricao-wrap');
+        const linkInscEl = document.getElementById('mural-midia-link-inscricao');
+        if (ev.midia_inscricao === 'Sim' && ev.midia_link_inscricao && ev.midia_link_inscricao.trim() !== '') {
+          linkInscEl.href = urlSegura(ev.midia_link_inscricao) || '#';
+          linkInscWrap.classList.remove('hidden');
+        } else {
+          linkInscWrap.classList.add('hidden');
+        }
+
+        const infoMidiaWrap = document.getElementById('mural-midia-info-wrap');
+        if (ev.midia_info && ev.midia_info.trim() !== '') {
+          document.getElementById('mural-midia-info').textContent = ev.midia_info;
+          infoMidiaWrap.classList.remove('hidden');
+        } else {
+          infoMidiaWrap.classList.add('hidden');
+        }
+      } else {
+        blocoMuralMidia.classList.add('hidden');
+      }
+
+      const temFotos = ev.link_fotos && ev.link_fotos.trim() !== '';
+      const temVideos = ev.link_videos && ev.link_videos.trim() !== '';
+      const blocoPos = document.getElementById('mural-bloco-pos-evento');
+      const btnFotos = document.getElementById('mural-link-fotos');
+      const btnVideos = document.getElementById('mural-link-videos');
+
+      if (temFotos || temVideos) {
+        blocoPos.classList.remove('hidden');
+        if (temFotos) {
+          btnFotos.href = urlSegura(ev.link_fotos) || '#';
+          btnFotos.classList.remove('hidden');
+        } else {
+          btnFotos.classList.add('hidden');
+        }
+        if (temVideos) {
+          btnVideos.href = urlSegura(ev.link_videos) || '#';
+          btnVideos.classList.remove('hidden');
+        } else {
+          btnVideos.classList.add('hidden');
+        }
+      } else {
+        blocoPos.classList.add('hidden');
+      }
+
+      // Preenchimento dos inputs
+      document.getElementById('input-lider').value = ev.lider || '';
+      document.getElementById('input-ministerio').value = ev.ministerio || '';
+
+      // Compatibilidade de horário antigo ou estruturado
+      if (ev.horario_inicio && ev.horario_fim) {
+        document.getElementById('input-horario-inicio').value = hm(ev.horario_inicio);
+        document.getElementById('input-horario-fim').value = hm(ev.horario_fim);
+      } else if (ev.horario) {
+        const matches = ev.horario.match(/(\d{1,2})[:h](\d{2})?/g);
+        document.getElementById('input-horario-inicio').value = matches && matches[0]
+          ? matches[0].replace('h', ':').padStart(5, '0')
+          : '';
+        document.getElementById('input-horario-fim').value = matches && matches[1]
+          ? matches[1].replace('h', ':').padStart(5, '0')
+          : '';
+      } else {
+        document.getElementById('input-horario-inicio').value = '';
+        document.getElementById('input-horario-fim').value = '';
+      }
+
+      const locaisSalvos = (ev.local || '').split(',').map(s => s.trim());
+      document.querySelectorAll('input[name="evento-local"]').forEach(cb => {
+        cb.checked = locaisSalvos.includes(cb.value);
+      });
+
+      document.getElementById('input-midia').value = ev.necessita_midia || '';
+      document.getElementById('input-louvor').value = ev.necessita_louvor || '';
+      document.getElementById('input-diaconia').value = ev.necessita_diaconia || '';
+
+      document.getElementById('input-midia-tema').value = ev.midia_tema || '';
+      document.getElementById('input-midia-arte').value = ev.midia_arte || '';
+      document.getElementById('input-midia-banner').value = ev.midia_banner || '';
+      document.getElementById('input-midia-inscricao').value = ev.midia_inscricao || '';
+      document.getElementById('input-midia-link-inscricao').value = ev.midia_link_inscricao || '';
+      document.getElementById('input-midia-info').value = ev.midia_info || '';
+
+      document.getElementById('input-observacoes').value = ev.observacoes || '';
+      document.getElementById('input-link-fotos').value = ev.link_fotos || '';
+      document.getElementById('input-link-videos').value = ev.link_videos || '';
+
+      alternarSecaoMidia();
+      alternarCampoLinkInscricao();
+
+      // Controle de Bloqueio Pós-Evento / Tranca Manual
+      const statusBloqueio = verificarStatusBloqueioEvento(ev);
+      const badgeTrancada = document.getElementById('badge-ficha-trancada');
+      const avisoBloqueio = document.getElementById('aviso-ficha-bloqueada');
+      const textoMotivo = document.getElementById('texto-motivo-bloqueio');
+
+      badgeTrancada.classList.toggle('hidden', !ev.bloqueado);
+
+      if (statusBloqueio.bloqueadoParaUsuario) {
+        avisoBloqueio.classList.remove('hidden');
+        textoMotivo.textContent = statusBloqueio.motivo;
+        aplicarBloqueioFormulario(true, statusBloqueio.liberarPosEvento);
+      } else {
+        avisoBloqueio.classList.add('hidden');
+        aplicarBloqueioFormulario(false, true);
+      }
+
+      // Ações exclusivas do Coordenador na ficha
+      document.getElementById('acoes-coord-evento').classList.toggle('hidden', !modoCoordenador);
+      if (modoCoordenador) {
+        const btnTrancar = document.getElementById('btn-trancar-ficha');
+        btnTrancar.textContent = ev.bloqueado ? 'Destrancar Ficha' : 'Trancar Ficha';
+      }
+
+      document.getElementById('tela-calendario').classList.add('hidden');
+      document.getElementById('tela-evento').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function voltarParaCalendario() {
+      eventoSelecionado = null;
+      const url = new URL(window.location);
+      url.searchParams.delete('evento');
+      window.history.pushState({}, '', url);
+
+      document.getElementById('tela-evento').classList.add('hidden');
+      document.getElementById('tela-calendario').classList.remove('hidden');
+      renderizarCalendario();
+    }
+
+    async function salvarFichaLider(e) {
+      e.preventDefault();
+      if (!eventoSelecionado) return;
+
+      const statusBloqueio = verificarStatusBloqueioEvento(eventoSelecionado);
+      if (statusBloqueio.bloqueadoParaUsuario && !statusBloqueio.liberarPosEvento) {
+        alert(statusBloqueio.motivo);
+        return;
+      }
+
+      // Se a data já passou (bloqueio parcial), atualiza apenas os links de Fotos e Vídeos
+      if (statusBloqueio.bloqueadoParaUsuario && statusBloqueio.liberarPosEvento) {
+        const btn = document.getElementById('btn-salvar-ficha');
+        btn.disabled = true;
+        btn.textContent = 'Salvando...';
+
+        const { error } = await db.from('eventos').update({
+          link_fotos: document.getElementById('input-link-fotos').value.trim(),
+          link_videos: document.getElementById('input-link-videos').value.trim(),
+          atualizado_em: new Date().toISOString()
+        }).eq('id', eventoSelecionado.id).select('id').then(semEfeito);
+
+        btn.disabled = false;
+        btn.textContent = 'Salvar Informações no Mural';
+
+        if (error) {
+          if (!tratarErroAgenda(error)) mostrarAviso('Erro ao salvar links pós-evento: ' + error.message, 'erro');
+          return;
+        }
+
+        await carregarEventos();
+        if (eventoSelecionado) abrirPaginaEvento(eventoSelecionado.id);
+        mostrarAviso('Links de fotos e vídeos atualizados com sucesso!', 'sucesso');
+        return;
+      }
+
+      const locaisMarcados = Array.from(document.querySelectorAll('input[name="evento-local"]:checked'))
+        .map(cb => cb.value);
+
+      if (locaisMarcados.length === 0) {
+        alert('Selecione pelo menos um Local do Evento (Templo, Salão de Festas ou Quadra).');
+        return;
+      }
+
+      const horaInicio = document.getElementById('input-horario-inicio').value;
+      const horaFim = document.getElementById('input-horario-fim').value;
+
+      if (horaParaMinutos(horaFim) <= horaParaMinutos(horaInicio)) {
+        alert('O horário de término deve ser posterior ao horário de início.');
+        return;
+      }
+
+      // Validação de conflito de espaço e horário
+      const conflitos = verificarConflitos({
+        dataISO: eventoSelecionado.data,
+        espacosLista: locaisMarcados,
+        horaInicioStr: horaInicio,
+        horaFimStr: horaFim,
+        ignorarEventoId: eventoSelecionado.id
+      });
+
+      if (conflitos.length > 0) {
+        abrirModalConflito(conflitos);
+        return;
+      }
+
+      const precisaMidia = document.getElementById('input-midia').value;
+      const precisaInscricao = precisaMidia === 'Sim' ? document.getElementById('input-midia-inscricao').value : '';
+
+      const btn = document.getElementById('btn-salvar-ficha');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const atualizacao = {
+        lider: document.getElementById('input-lider').value.trim(),
+        ministerio: document.getElementById('input-ministerio').value.trim(),
+        horario: `${horaInicio} às ${horaFim}`,
+        horario_inicio: horaInicio,
+        horario_fim: horaFim,
+        local: locaisMarcados.join(', '),
+        necessita_midia: precisaMidia,
+        necessita_louvor: document.getElementById('input-louvor').value,
+        necessita_diaconia: document.getElementById('input-diaconia').value,
+        midia_tema: precisaMidia === 'Sim' ? document.getElementById('input-midia-tema').value.trim() : '',
+        midia_arte: precisaMidia === 'Sim' ? document.getElementById('input-midia-arte').value : '',
+        midia_banner: precisaMidia === 'Sim' ? document.getElementById('input-midia-banner').value : '',
+        midia_inscricao: precisaInscricao,
+        midia_link_inscricao: (precisaMidia === 'Sim' && precisaInscricao === 'Sim')
+          ? document.getElementById('input-midia-link-inscricao').value.trim()
+          : '',
+        midia_info: precisaMidia === 'Sim' ? document.getElementById('input-midia-info').value.trim() : '',
+        observacoes: document.getElementById('input-observacoes').value.trim(),
+        link_fotos: document.getElementById('input-link-fotos').value.trim(),
+        link_videos: document.getElementById('input-link-videos').value.trim(),
+        atualizado_em: new Date().toISOString()
+      };
+
+      const { error } = await db.from('eventos').update(atualizacao).eq('id', eventoSelecionado.id).select('id').then(semEfeito);
+
+      btn.disabled = false;
+      btn.textContent = 'Salvar Informações no Mural';
+
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao salvar: ' + error.message, 'erro');
+        return;
+      }
+
+      await carregarEventos();
+      if (eventoSelecionado) abrirPaginaEvento(eventoSelecionado.id);
+      mostrarAviso('Informações salvas com sucesso! Todos já podem visualizar.', 'sucesso');
+    }
+
+    function copiarLinkEvento() {
+      navigator.clipboard.writeText(window.location.href);
+      mostrarAviso('Link direto deste evento copiado para a área de transferência!', 'sucesso');
+    }
+
+    // =========================================================================
+    // LOGIN E MODO COORDENADOR (login central da Betel — Supabase Auth)
+    // A senha nunca é comparada no navegador: quem confere é o Auth.
+    // =========================================================================
+    const logado = () => !!(permissoes && permissoes.status === 'ok');
+
+    async function alternarModoCoordenador() {
+      if (!permissoes) {
+        abrirModalLoginCoord();
+        return;
+      }
+      await db.auth.signOut({ scope: 'local' });
+      permissoes = null;
+      modoCoordenador = false;
+      coordenadorAtual = null;
+      atualizarInterfaceCoordenador();
+      if (eventoSelecionado) abrirPaginaEvento(eventoSelecionado.id);
+      mostrarAviso('Você saiu da sua conta.', 'info');
+    }
+
+    function abrirModalLoginCoord() {
+      document.getElementById('login-coord-usuario').value = '';
+      document.getElementById('login-coord-senha').value = '';
+      document.getElementById('erro-login-coord').classList.add('hidden');
+      document.getElementById('modal-login-coord').classList.remove('hidden');
+      setTimeout(() => document.getElementById('login-coord-usuario').focus(), 50);
+    }
+
+    function fecharModalLoginCoord() {
+      document.getElementById('modal-login-coord').classList.add('hidden');
+    }
+
+    function mensagemErroLogin(err) {
+      const c = err?.code || '', m = String(err?.message || '');
+      if (c === 'invalid_credentials' || /invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
+      if (c === 'user_banned' || /banned/i.test(m)) return 'Esta conta está desativada. Fale com o responsável (MASTER).';
+      if (/rate limit/i.test(m)) return 'Muitas tentativas seguidas. Aguarde alguns minutos.';
+      return 'Não foi possível entrar: ' + m;
+    }
+
+    async function autenticarCoordenador(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-coord-usuario').value.trim().toLowerCase();
+      const senha = document.getElementById('login-coord-senha').value;
+      const erroEl = document.getElementById('erro-login-coord');
+      const btn = document.getElementById('btn-entrar-coord');
+      const mostrarErro = (html) => { erroEl.innerHTML = html; erroEl.classList.remove('hidden'); };
+
+      erroEl.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+
+      const { error } = await db.auth.signInWithPassword({ email, password: senha });
+      if (!error) await carregarPermissoes();
+
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+
+      if (error) { mostrarErro(esc(mensagemErroLogin(error))); return; }
+      if (permissoes?.status === 'trocar_senha') {
+        mostrarErro('Primeiro acesso: crie a sua senha na <a class="underline font-bold" href="../#equipe">Área de Membros</a> e depois volte aqui.');
+        return;
+      }
+      if (permissoes?.status === 'inativo') { await db.auth.signOut({ scope: 'local' }); permissoes = null; mostrarErro('Esta conta está desativada.'); return; }
+      if (permissoes?.status !== 'ok') { await db.auth.signOut({ scope: 'local' }); permissoes = null; mostrarErro('Sua conta ainda não tem acesso liberado. Fale com o responsável.'); return; }
+
+      fecharModalLoginCoord();
+      atualizarInterfaceCoordenador();
+      if (eventoSelecionado) abrirPaginaEvento(eventoSelecionado.id);
+      if (modoCoordenador) mostrarAviso(`Bem-vindo(a), ${permissoes.nome}! Modo Coordenador habilitado.`, 'sucesso');
+      else if ((permissoes.ministerios_lider || []).length) mostrarAviso(`Bem-vindo(a), ${permissoes.nome}! Você pode preencher as fichas de: ${permissoes.ministerios_lider.map(m => m.nome).join(', ')}.`, 'sucesso');
+      else mostrarAviso(`Bem-vindo(a), ${permissoes.nome}! Sua conta pode consultar a agenda.`, 'info');
+    }
+
+    function atualizarInterfaceCoordenador(render = true) {
+      const btn = document.getElementById('btn-modo-coord');
+      btn.textContent = !permissoes ? 'Entrar / Modo Coordenador'
+        : modoCoordenador ? 'Sair do Modo Coordenador'
+        : `Sair (${String(permissoes.nome || 'conta').split(' ')[0]})`;
+
+      if (modoCoordenador && coordenadorAtual) {
+        document.getElementById('nome-coord-logado').textContent = coordenadorAtual.nome;
+      }
+      document.getElementById('barra-coordenador').classList.toggle('hidden', !modoCoordenador);
+      document.getElementById('btn-gestao-coord').classList.toggle('hidden', !(permissoes && permissoes.master));
+
+      const lider = logado() && !modoCoordenador;
+      document.getElementById('barra-lider').classList.toggle('hidden', !lider);
+      if (lider) {
+        const mins = (permissoes.ministerios_lider || []).map(m => m.nome);
+        document.getElementById('texto-barra-lider').innerHTML = `<strong>Conectado(a): ${esc(permissoes.nome)}.</strong> ` +
+          (mins.length ? `Você pode preencher as fichas de: <strong>${esc(mins.join(', '))}</strong>.` : 'Sua conta pode consultar a agenda.');
+      }
+      if (render) renderizarCalendario();
+    }
+
+
+    // =========================================================================
+    // ALTERAÇÃO DE SENHA (conta central)
+    // =========================================================================
+    async function abrirModalAlterarSenha() {
+      if (!logado()) return;
+      const { data: { session } } = await db.auth.getSession();
+      document.getElementById('alterar-senha-usuario-label').textContent = `${permissoes.nome} (${session?.user?.email || ''})`;
+      document.getElementById('senha-atual-coord').value = '';
+      document.getElementById('nova-senha-coord').value = '';
+      document.getElementById('confirmar-nova-senha-coord').value = '';
+      document.getElementById('erro-alterar-senha').classList.add('hidden');
+      document.getElementById('modal-alterar-senha').classList.remove('hidden');
+      setTimeout(() => document.getElementById('senha-atual-coord').focus(), 50);
+    }
+
+    function fecharModalAlterarSenha() {
+      document.getElementById('modal-alterar-senha').classList.add('hidden');
+    }
+
+    async function salvarNovaSenhaCoordenador(e) {
+      e.preventDefault();
+      if (!logado()) return;
+
+      const senhaAtual = document.getElementById('senha-atual-coord').value;
+      const novaSenha = document.getElementById('nova-senha-coord').value;
+      const confirmarSenha = document.getElementById('confirmar-nova-senha-coord').value;
+      const erroEl = document.getElementById('erro-alterar-senha');
+      const btn = document.getElementById('btn-salvar-nova-senha');
+      const erro = (t) => { erroEl.textContent = t; erroEl.classList.remove('hidden'); };
+
+      erroEl.classList.add('hidden');
+      if (novaSenha.length < 10 || !/[A-Za-zÀ-ú]/.test(novaSenha) || !/\d/.test(novaSenha)) { erro('A nova senha deve ter pelo menos 10 caracteres, com letras e números.'); return; }
+      if (novaSenha !== confirmarSenha) { erro('A confirmação da nova senha não confere.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+      const { data: { session } } = await db.auth.getSession();
+      // A senha atual é conferida pelo Auth (no servidor), não no navegador
+      const { error: erroVerif } = await db.auth.signInWithPassword({ email: session.user.email, password: senhaAtual });
+      if (erroVerif) { btn.disabled = false; btn.textContent = 'Salvar Senha'; erro('A senha atual informada está incorreta.'); return; }
+
+      btn.textContent = 'Salvando...';
+      const { error: erroUpdate } = await db.auth.updateUser({ password: novaSenha });
+      btn.disabled = false;
+      btn.textContent = 'Salvar Senha';
+      if (erroUpdate) {
+        erro(/different/i.test(erroUpdate.message) ? 'A nova senha precisa ser diferente da atual.' : 'Erro ao atualizar a senha: ' + erroUpdate.message);
+        return;
+      }
+      fecharModalAlterarSenha();
+      mostrarAviso('Sua senha foi alterada com sucesso! Ela vale também para a Área de Membros.', 'sucesso');
+    }
+
+    // =========================================================================
+    // GESTÃO DE COORDENADORES (somente MASTER)
+    // Coordenador = conta da equipe com acesso de coordenação na Agenda.
+    // Os coordenadores antigos (login e senha próprios) são ligados a uma conta;
+    // nenhum registro é apagado: "remover" passa a ser desativar.
+    // =========================================================================
+    let contasEquipe = [];
+
+    async function abrirModalGestaoCoordenadores() {
+      if (!permissoes || !permissoes.master) return;
+      document.getElementById('modal-gestao-coord').classList.remove('hidden');
+      await carregarListaCoordenadores();
+    }
+
+    function fecharModalGestaoCoordenadores() {
+      document.getElementById('modal-gestao-coord').classList.add('hidden');
+    }
+
+    function opcoesContas(selecionado) {
+      return '<option value="">Escolha uma conta…</option>' + contasEquipe.filter(u => u.ativo)
+        .map(u => `<option value="${esc(u.id)}"${u.id === selecionado ? ' selected' : ''}>${esc(u.nome)} — ${esc(u.email)}</option>`).join('');
+    }
+
+    async function carregarListaCoordenadores() {
+      const container = document.getElementById('lista-coordenadores-cadastrados');
+      container.innerHTML = '<p class="text-xs text-stone-500">Carregando lista...</p>';
+
+      const [r1, r2] = await Promise.all([db.rpc('agenda_listar_coordenadores'), db.rpc('listar_usuarios')]);
+      if (r1.error || r2.error) {
+        container.innerHTML = `<p class="text-xs text-red-700">Erro ao listar coordenadores: ${esc((r1.error || r2.error).message)}</p>`;
+        return;
+      }
+      contasEquipe = r2.data || [];
+      document.getElementById('novo-coord-conta').innerHTML = opcoesContas('');
+      const data = r1.data || [];
+
+      if (!data.length) {
+        container.innerHTML = '<p class="text-xs text-stone-500">Nenhum coordenador cadastrado.</p>';
+        return;
+      }
+
+      container.innerHTML = data.map(coord => {
+        const badgeStatus = coord.ativo
+          ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Ativo</span>'
+          : '<span class="px-2 py-0.5 rounded-full bg-stone-200 text-stone-600 text-[10px] font-bold">Inativo</span>';
+        const vinculo = coord.usuario_id
+          ? `<p class="text-xs text-stone-500">Conta: <strong>${esc(coord.usuario_email || '')}</strong></p>`
+          : `<p class="text-xs text-amber-800">Login antigo: <strong>${esc(coord.login)}</strong> — ainda não ligado a uma conta (sem acesso até ser ligado)</p>
+             <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+               <select id="vinc-${esc(coord.id)}" class="px-2 py-1 rounded-lg border border-stone-300 bg-white text-[11px] max-w-[260px]">${opcoesContas('')}</select>
+               <button onclick="vincularCoordenador('${esc(coord.id)}')" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-betel-vinho text-betel-dourado hover:bg-betel-vinhoEscuro">Ligar à conta</button>
+             </div>`;
+        return `
+          <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl border border-stone-200 bg-white">
+            <div>
+              <div class="flex items-center gap-2">
+                <p class="font-bold text-xs sm:text-sm text-stone-900">${esc(coord.nome)}</p>
+                ${badgeStatus}
+                ${coord.eu ? '<span class="text-[10px] text-betel-vinho font-semibold">(Você)</span>' : ''}
+              </div>
+              ${vinculo}
+            </div>
+            ${coord.eu ? '' : `
+              <div class="flex items-center gap-1.5">
+                <button onclick="alternarStatusCoordenador('${esc(coord.id)}', ${!coord.ativo})"
+                  class="px-2.5 py-1 rounded-lg text-[11px] font-semibold ${coord.ativo ? 'bg-amber-100 text-amber-900 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'}">
+                  ${coord.ativo ? 'Desativar' : 'Reativar'}
+                </button>
+              </div>
+            `}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function criarNovoCoordenador(e) {
+      e.preventDefault();
+      const conta = document.getElementById('novo-coord-conta').value;
+      const btn = document.getElementById('btn-criar-coord');
+      if (!conta) { alert('Escolha a conta da equipe que será coordenadora.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+      const { error } = await db.rpc('agenda_definir_coordenador', { p_usuario: conta });
+      btn.disabled = false;
+      btn.textContent = 'Tornar Coordenador';
+
+      if (error) { alert('Não foi possível cadastrar: ' + error.message); return; }
+      await carregarListaCoordenadores();
+      const u = contasEquipe.find(x => x.id === conta);
+      mostrarAviso(`${u ? u.nome : 'Conta'} agora é coordenador(a) da Agenda.`, 'sucesso');
+    }
+
+    async function vincularCoordenador(id) {
+      const conta = document.getElementById('vinc-' + id).value;
+      if (!conta) { alert('Escolha a conta da equipe desta pessoa.'); return; }
+      const { error } = await db.rpc('agenda_vincular_coordenador', { p_coordenador: String(id), p_usuario: conta });
+      if (error) { alert('Erro ao ligar à conta: ' + error.message); return; }
+      await carregarListaCoordenadores();
+      mostrarAviso('Coordenador ligado à conta da equipe.', 'sucesso');
+    }
+
+    async function alternarStatusCoordenador(id, novoAtivo) {
+      const { error } = await db.rpc('agenda_status_coordenador', { p_coordenador: String(id), p_ativo: novoAtivo });
+      if (error) {
+        alert('Erro ao alterar status: ' + error.message);
+        return;
+      }
+      await carregarListaCoordenadores();
+    }
+
+    // =========================================================================
+    // EVENTOS DO COORDENADOR (CRIAR / EDITAR DATA / EXCLUIR)
+    // =========================================================================
+    function abrirModalNovoEvento(dataPadrao = '') {
+      document.getElementById('modal-coord-titulo').textContent = 'Novo Evento no Calendário';
+      document.getElementById('coord-evento-id').value = '';
+      document.getElementById('coord-titulo').value = '';
+      document.getElementById('coord-data').value = dataPadrao || `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-01`;
+      document.getElementById('coord-ministerio').value = '';
+      document.getElementById('modal-coord').classList.remove('hidden');
+    }
+
+    function abrirModalEditarEvento() {
+      if (!eventoSelecionado) return;
+      document.getElementById('modal-coord-titulo').textContent = 'Alterar Data ou Nome do Evento';
+      document.getElementById('coord-evento-id').value = eventoSelecionado.id;
+      document.getElementById('coord-titulo').value = eventoSelecionado.titulo;
+      document.getElementById('coord-data').value = eventoSelecionado.data;
+      document.getElementById('coord-ministerio').value = eventoSelecionado.ministerio || '';
+      document.getElementById('modal-coord').classList.remove('hidden');
+    }
+
+    function fecharModalCoord() {
+      document.getElementById('modal-coord').classList.add('hidden');
+    }
+
+    async function salvarEventoCoordenador(e) {
+      e.preventDefault();
+      const id = document.getElementById('coord-evento-id').value;
+      const novaData = document.getElementById('coord-data').value;
+
+      // Se estiver movendo a data de um evento que já tem local e horário, verifica conflito na nova data
+      if (id && eventoSelecionado && eventoSelecionado.local) {
+        const faixa = extrairFaixaHorarioEvento(eventoSelecionado);
+        if (faixa.inicio !== null && faixa.fim !== null) {
+          const iniStr = `${String(Math.floor(faixa.inicio / 60)).padStart(2, '0')}:${String(faixa.inicio % 60).padStart(2, '0')}`;
+          const fimStr = `${String(Math.floor(faixa.fim / 60)).padStart(2, '0')}:${String(faixa.fim % 60).padStart(2, '0')}`;
+          const locaisEv = eventoSelecionado.local.split(',').map(s => s.trim());
+
+          const conflitos = verificarConflitos({
+            dataISO: novaData,
+            espacosLista: locaisEv,
+            horaInicioStr: iniStr,
+            horaFimStr: fimStr,
+            ignorarEventoId: id
+          });
+
+          if (conflitos.length > 0) {
+            abrirModalConflito(conflitos);
+            return;
+          }
+        }
+      }
+
+      const payload = {
+        titulo: document.getElementById('coord-titulo').value.trim().toUpperCase(),
+        data: novaData,
+        ministerio: document.getElementById('coord-ministerio').value.trim()
+      };
+
+      let error;
+      if (id) {
+        ({ error } = await db.from('eventos').update(payload).eq('id', id).select('id').then(semEfeito));
+      } else {
+        ({ error } = await db.from('eventos').insert([payload]));
+      }
+
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao salvar evento: ' + error.message, 'erro');
+        return;
+      }
+
+      fecharModalCoord();
+      await carregarEventos();
+      if (id && eventoSelecionado) {
+        abrirPaginaEvento(id);
+      } else {
+        renderizarCalendario();
+      }
+      mostrarAviso('Calendário atualizado!', 'sucesso');
+    }
+
+    async function excluirEventoAtual() {
+      if (!eventoSelecionado) return;
+      if (!confirm(`Tem certeza que deseja excluir o evento "${eventoSelecionado.titulo}"?`)) return;
+
+      const { error } = await db.from('eventos').delete().eq('id', eventoSelecionado.id).select('id').then(semEfeito);
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao excluir: ' + error.message, 'erro');
+        return;
+      }
+
+      await carregarEventos();
+      voltarParaCalendario();
+      mostrarAviso('Evento removido do calendário.', 'sucesso');
+    }
+
+    // =========================================================================
+    // MODO COORDENADOR (RESERVA DE ESPAÇOS COM VERIFICAÇÃO DE CONFLITO)
+    // =========================================================================
+    function abrirModalReserva(dataPadrao = '') {
+      const hojeStr = dataPadrao || `${anoAtual}-${String(mesAtual + 1).padStart(2, '0')}-01`;
+      document.getElementById('res-ministerio').value = '';
+      document.getElementById('res-motivo').value = '';
+      document.querySelectorAll('input[name="res-espaco"]').forEach(cb => cb.checked = false);
+
+      document.getElementById('res-data-unica').value = hojeStr;
+      document.getElementById('res-data-inicio-massa').value = hojeStr;
+      document.getElementById('res-data-fim-massa').value = fimDoSemestre(hojeStr);
+
+      document.querySelector('input[name="res-tipo"][value="unica"]').checked = true;
+      alternarTipoReserva();
+      document.getElementById('modal-reserva').classList.remove('hidden');
+    }
+
+    function fecharModalReserva() {
+      document.getElementById('modal-reserva').classList.add('hidden');
+    }
+
+    function alternarTipoReserva() {
+      const tipo = document.querySelector('input[name="res-tipo"]:checked').value;
+      document.getElementById('bloco-res-unica').classList.toggle('hidden', tipo !== 'unica');
+      document.getElementById('bloco-res-massa').classList.toggle('hidden', tipo !== 'massa');
+    }
+
+    async function salvarReservaCoordenador(e) {
+      e.preventDefault();
+
+      const espacosMarcados = Array.from(document.querySelectorAll('input[name="res-espaco"]:checked'))
+        .map(cb => cb.value);
+
+      if (espacosMarcados.length === 0) {
+        alert('Selecione pelo menos um espaço (Templo, Salão de Festas ou Quadra).');
+        return;
+      }
+
+      const ministerio = document.getElementById('res-ministerio').value.trim();
+      const motivo = document.getElementById('res-motivo').value.trim();
+      const horarioInicio = document.getElementById('res-inicio').value;
+      const horarioFim = document.getElementById('res-fim').value;
+
+      if (horaParaMinutos(horarioFim) <= horaParaMinutos(horarioInicio)) {
+        alert('O horário de término deve ser posterior ao horário de início.');
+        return;
+      }
+
+      const espacosStr = espacosMarcados.join(', ');
+      const tipo = document.querySelector('input[name="res-tipo"]:checked').value;
+
+      let registrosParaInserir = [];
+
+      if (tipo === 'unica') {
+        const dataUnica = document.getElementById('res-data-unica').value;
+        if (!dataUnica) {
+          alert('Informe a data da reserva.');
+          return;
+        }
+        registrosParaInserir.push({
+          ministerio,
+          motivo,
+          espacos: espacosStr,
+          data: dataUnica,
+          horario_inicio: horarioInicio,
+          horario_fim: horarioFim,
+          lote_id: null
+        });
+      } else {
+        const diaSemanaAlvo = Number(document.getElementById('res-dia-semana').value);
+        const dataInicioStr = document.getElementById('res-data-inicio-massa').value;
+        const dataFimStr = document.getElementById('res-data-fim-massa').value;
+
+        if (!dataInicioStr || !dataFimStr) {
+          alert('Informe a data inicial e a data final para a reserva em massa.');
+          return;
+        }
+
+        const dtInicio = new Date(dataInicioStr + 'T12:00:00');
+        const dtFim = new Date(dataFimStr + 'T12:00:00');
+
+        if (dtFim < dtInicio) {
+          alert('A data final deve ser igual ou posterior à data inicial.');
+          return;
+        }
+
+        const loteId = 'LOTE-' + Date.now();
+        let cursor = new Date(dtInicio);
+
+        while (cursor <= dtFim) {
+          if (cursor.getDay() === diaSemanaAlvo) {
+            const ano = cursor.getFullYear();
+            const mes = String(cursor.getMonth() + 1).padStart(2, '0');
+            const dia = String(cursor.getDate()).padStart(2, '0');
+            registrosParaInserir.push({
+              ministerio,
+              motivo,
+              espacos: espacosStr,
+              data: `${ano}-${mes}-${dia}`,
+              horario_inicio: horarioInicio,
+              horario_fim: horarioFim,
+              lote_id: loteId
+            });
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+
+        if (registrosParaInserir.length === 0) {
+          alert('Nenhuma ocorrência desse dia da semana foi encontrada no período informado.');
+          return;
+        }
+      }
+
+      // Validação de Conflito em todas as datas da reserva (única ou em massa)
+      let todosConflitos = [];
+      registrosParaInserir.forEach(reg => {
+        const c = verificarConflitos({
+          dataISO: reg.data,
+          espacosLista: espacosMarcados,
+          horaInicioStr: horarioInicio,
+          horaFimStr: horarioFim
+        });
+        todosConflitos.push(...c);
+      });
+
+      if (todosConflitos.length > 0) {
+        abrirModalConflito(todosConflitos);
+        return;
+      }
+
+      const btn = document.getElementById('btn-salvar-reserva');
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const { error } = await db.from('reservas').insert(registrosParaInserir);
+
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Reserva(s)';
+
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao salvar reserva: ' + error.message, 'erro');
+        return;
+      }
+
+      fecharModalReserva();
+      await carregarReservas();
+      renderizarCalendario();
+      mostrarAviso(`${registrosParaInserir.length} reserva(s) confirmada(s) no calendário!`, 'sucesso');
+    }
+
+    function abrirDetalheReserva(id) {
+      const res = reservas.find(r => String(r.id) === String(id));
+      if (!res) return;
+      reservaSelecionada = res;
+
+      const [ano, mes, dia] = res.data.split('-');
+      document.getElementById('det-res-titulo').textContent = `${res.ministerio} — ${res.motivo}`;
+      document.getElementById('det-res-data').textContent = `Data: ${dia}/${mes}/${ano}`;
+      document.getElementById('det-res-espacos').textContent = res.espacos;
+      document.getElementById('det-res-horario').textContent = `${hm(res.horario_inicio)} às ${hm(res.horario_fim)}`;
+      document.getElementById('det-res-ministerio').textContent = res.ministerio;
+      document.getElementById('det-res-motivo').textContent = res.motivo;
+
+      document.getElementById('acoes-coord-reserva').classList.toggle('hidden', !modoCoordenador);
+      document.getElementById('btn-excluir-lote').classList.toggle('hidden', !res.lote_id);
+
+      document.getElementById('modal-detalhe-reserva').classList.remove('hidden');
+    }
+
+    function fecharModalDetalheReserva() {
+      document.getElementById('modal-detalhe-reserva').classList.add('hidden');
+      reservaSelecionada = null;
+    }
+
+    async function excluirReservaUnica() {
+      if (!reservaSelecionada) return;
+      if (!confirm('Deseja excluir apenas esta reserva específica?')) return;
+
+      const { error } = await db.from('reservas').delete().eq('id', reservaSelecionada.id).select('id').then(semEfeito);
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao excluir reserva: ' + error.message, 'erro');
+        return;
+      }
+
+      fecharModalDetalheReserva();
+      await carregarReservas();
+      renderizarCalendario();
+      mostrarAviso('Reserva excluída.', 'sucesso');
+    }
+
+    async function excluirReservaLote() {
+      if (!reservaSelecionada || !reservaSelecionada.lote_id) return;
+      if (!confirm('Deseja excluir TODAS as datas criadas nesta reserva em massa?')) return;
+
+      const { error } = await db.from('reservas').delete().eq('lote_id', reservaSelecionada.lote_id).select('id').then(semEfeito);
+      if (error) {
+        if (!tratarErroAgenda(error)) mostrarAviso('Erro ao excluir série de reservas: ' + error.message, 'erro');
+        return;
+      }
+
+      fecharModalDetalheReserva();
+      await carregarReservas();
+      renderizarCalendario();
+      mostrarAviso('Todas as reservas da série foram excluídas.', 'sucesso');
+    }
+
+    // =========================================================================
+    // GERADOR DE PDF INTERATIVO
+    // =========================================================================
+    function gerarPDFInterativo() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const baseUrl = window.location.origin + window.location.pathname;
+
+      doc.setFillColor(88, 33, 33);
+      doc.rect(0, 0, 297, 26, 'F');
+
+      doc.setTextColor(255, 225, 178);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('IGREJA BATISTA BETEL', 14, 11);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Calendário Ministerial Interativo — Clique sobre o evento para abrir e preencher a ficha', 14, 18);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.text(`${NOMES_MESES[mesAtual].toUpperCase()} ${anoAtual}`, 283, 15, { align: 'right' });
+
+      const diasSemana = ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'];
+      const margemX = 14;
+      const topoGrade = 32;
+      const larguraCol = (297 - 28) / 7;
+      const alturaCabecalhoDias = 8;
+
+      doc.setFillColor(62, 21, 21);
+      doc.rect(margemX, topoGrade, 297 - 28, alturaCabecalhoDias, 'F');
+      doc.setTextColor(255, 225, 178);
+      doc.setFontSize(8.5);
+      diasSemana.forEach((dia, idx) => {
+        doc.text(dia, margemX + idx * larguraCol + larguraCol / 2, topoGrade + 5.5, { align: 'center' });
+      });
+
+      const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay();
+      const totalDias = new Date(anoAtual, mesAtual + 1, 0).getDate();
+      const totalCelulas = Math.ceil((primeiroDia + totalDias) / 7) * 7;
+      const numLinhas = totalCelulas / 7;
+      const alturaCelula = (195 - (topoGrade + alturaCabecalhoDias)) / numLinhas;
+      const mesStr = String(mesAtual + 1).padStart(2, '0');
+
+      let diaContador = 1;
+      for (let i = 0; i < totalCelulas; i++) {
+        const col = i % 7;
+        const row = Math.floor(i / 7);
+        const x = margemX + col * larguraCol;
+        const y = topoGrade + alturaCabecalhoDias + row * alturaCelula;
+
+        doc.setDrawColor(210, 200, 195);
+        doc.setFillColor(255, 253, 250);
+        doc.rect(x, y, larguraCol, alturaCelula, 'FD');
+
+        if (i >= primeiroDia && diaContador <= totalDias) {
+          const diaStr = String(diaContador).padStart(2, '0');
+          const dataISO = `${anoAtual}-${mesStr}-${diaStr}`;
+          const eventosDia = eventos.filter(e => e.data === dataISO);
+          const reservasDia = reservas.filter(r => r.data === dataISO);
+
+          doc.setTextColor(88, 33, 33);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9.5);
+          doc.text(String(diaContador), x + 2.5, y + 5.5);
+
+          let offsetY = y + 7.5;
+
+          eventosDia.forEach(ev => {
+            const boxH = 6.8;
+            if (offsetY + boxH <= y + alturaCelula - 1) {
+              doc.setFillColor(88, 33, 33);
+              doc.roundedRect(x + 1.5, offsetY, larguraCol - 3, boxH, 1.2, 1.2, 'F');
+
+              doc.setTextColor(255, 225, 178);
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(7);
+              const tituloCortado = ev.titulo.length > 18 ? ev.titulo.substring(0, 17) + '…' : ev.titulo;
+              doc.text(tituloCortado, x + 2.5, offsetY + 4.6);
+
+              const linkEvento = `${baseUrl}?evento=${ev.id}`;
+              doc.link(x + 1.5, offsetY, larguraCol - 3, boxH, { url: linkEvento });
+
+              offsetY += boxH + 1.2;
+            }
+          });
+
+          reservasDia.forEach(res => {
+            const boxH = 5.5;
+            if (offsetY + boxH <= y + alturaCelula - 1) {
+              doc.setFillColor(254, 243, 199);
+              doc.setDrawColor(217, 119, 6);
+              doc.roundedRect(x + 1.5, offsetY, larguraCol - 3, boxH, 1, 1, 'FD');
+
+              doc.setTextColor(120, 53, 15);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(6.2);
+              const txtRes = `${res.ministerio} (${res.espacos})`;
+              const txtCortado = txtRes.length > 22 ? txtRes.substring(0, 21) + '…' : txtRes;
+              doc.text(txtCortado, x + 2.3, offsetY + 3.8);
+
+              offsetY += boxH + 1;
+            }
+          });
+
+          diaContador++;
+        }
+      }
+
+      doc.setTextColor(120, 110, 110);
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} • Link do sistema: ${baseUrl}`, 14, 203);
+
+      doc.save(`Calendario_Betel_${NOMES_MESES[mesAtual]}_${anoAtual}.pdf`);
+    }
+  </script>
+  <script>
+    // Menu do cabeçalho no celular (mesmo comportamento do site)
+    (function () { var b = document.getElementById('agMenuBtn'), n = document.getElementById('agNav');
+      b.addEventListener('click', function () { var on = n.classList.toggle('open'); b.setAttribute('aria-expanded', String(on)); }); })();
+  </script>
+  <script src="../componentes.js"></script>
+</body>
+</html>

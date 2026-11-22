@@ -1,0 +1,521 @@
+<header class="top glass">
+  <a class="logo" href="#inicio" aria-label="Igreja Batista Betel — início"><img src="img/logo.png" alt="Igreja Batista Betel"></a>
+  <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <nav class="nav" id="nav" aria-label="Principal">
+    <a href="#inicio">Início</a>
+    <a href="#sobre">Sobre nós</a>
+    <a href="#ministerios">Ministérios</a>
+    <a href="#agenda">Agenda</a>
+    <a href="#colegio">Colégio</a>
+    <a href="#contato">Contato</a>
+    <a href="#equipe" class="nav-equipe" id="navEquipe"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4 20.5c.9-4 4-6 8-6s7.1 2 8 6"/></svg>Área de Membros</a>
+  </nav>
+  <div class="cp-usuario" id="cpUsuario" hidden></div>
+</header>
+
+<main>
+<!-- ============ INÍCIO ============ -->
+<section class="view" id="v-inicio">
+  <div class="hero2">
+    <div class="halo" style="top:62%"></div>
+    <div class="wrap">
+      <div class="top-txt">
+        <div class="hero-logo"><img src="img/logo.png" alt="Igreja Batista Betel"></div>
+        <h1 class="hin" style="--d:1.9s">Betel é <em>casa</em><br>de Deus.</h1>
+        <p class="lead hin" style="--d:2.15s">Um lugar para encontrar Deus, viver em família e crescer na fé.</p>
+        <div class="ctas hin" style="--d:2.35s"><a class="btn btn-p" href="#contato">Planeje sua visita</a><a class="btn btn-s" href="#programacao">Programação da semana</a></div>
+      </div>
+      <div class="stage hin" style="--d:2.5s">
+        <div class="screen">
+          <video id="heroVideo" autoplay muted loop playsinline preload="auto" poster="img/hero-poster.jpg" aria-label="Vídeo de apresentação com momentos da Igreja Batista Betel"><source src="video/hero.mp4" type="video/mp4"></video>
+          <div class="vctl"><button class="mini" id="soundBtn" aria-pressed="false">Ativar som</button><button class="mini" id="pauseBtn" aria-pressed="false">Pausar vídeo</button></div>
+        </div>
+        <aside class="visit" aria-live="polite">
+          <p class="eyebrow" id="nxLabel">Próximo encontro</p>
+          <p class="when" id="nxWhen">—</p>
+          <p class="what" id="nxWhat"></p>
+          <p class="cd"><span id="nxCount"></span></p>
+          <a class="btn" href="#contato">Como chegar</a>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <section class="band cp-galeria-home" aria-labelledby="galTitulo">
+    <div class="wrap">
+      <div class="head reveal"><div><p class="eyebrow">Vida da igreja</p><h2 id="galTitulo">Alegria, comunhão e <em>adoração</em>.</h2></div>
+        <p class="lead" style="max-width:520px">Uma igreja viva, que celebra junta e também se derrama em oração e reverência diante de Deus.</p></div>
+      <div class="cp-gal" id="homeGaleria"><figure class="cp-gal-item reveal"><img src="img/galeria/adoracao-maos.jpg" alt="Irmã em adoração com a mão no peito durante o culto" loading="lazy" decoding="async"><figcaption>Adoração</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/jovens-juntos.jpg" alt="Jovens reunidos e sorrindo no Acampamento Mergulhados" loading="lazy" decoding="async"><figcaption>Comunhão</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/oracao-ministracao.jpg" alt="Irmão orando por outra pessoa ajoelhada no altar" loading="lazy" decoding="async"><figcaption>Oração</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/louvor.jpg" alt="Ministro de louvor cantando no culto" loading="lazy" decoding="async"><figcaption>Louvor</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/quebrantamento.jpg" alt="Irmã emocionada em adoração" loading="lazy" decoding="async"><figcaption>Presença de Deus</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/alegria-jovens.jpg" alt="Jovens sorrindo juntos" loading="lazy" decoding="async"><figcaption>Alegria</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/mulheres-oracao.jpg" alt="Mulheres em oração no Congresso de Mulheres" loading="lazy" decoding="async"><figcaption>Intercessão</figcaption></figure><figure class="cp-gal-item reveal"><img src="img/galeria/reverencia.jpg" alt="Irmão em oração e reverência" loading="lazy" decoding="async"><figcaption>Reverência</figcaption></figure></div>
+    </div>
+  </section>
+
+  <section class="band" id="programacao">
+    <div class="wrap">
+      <div class="head reveal">
+        <div><p class="eyebrow">Programação · próximos dias</p><h2>Tem lugar pra você <em>todos</em> os dias.</h2></div>
+        <a class="btn btn-s" href="#agenda">Ver a semana completa</a>
+      </div>
+      <div class="days days3" id="days"></div>
+    </div>
+  </section>
+
+  <section class="brandmo" id="brandmo" aria-label="Betel é casa de Deus. Fazendo discípulos em nossa geração. A vitória é nossa em nome de Jesus.">
+    <div class="bm" id="bm">
+      <div class="halo bm-halo" aria-hidden="true"></div>
+      <img class="bm-logo" id="bmLogo" src="img/logo.png" alt="">
+      <div class="bm-frases" aria-hidden="true">
+        <p>Betel é <em>casa</em> de Deus</p>
+        <p>Fazendo discípulos em <em>nossa</em> geração</p>
+        <p>A vitória é <em>nossa</em> em nome de Jesus</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band vinho">
+    <div class="wrap split">
+      <div class="pwrap reveal"><div class="halo"></div><img class="pastores" src="img/pastores.jpg" alt="Pr. Clébio Torres e Pra. Luiza Torres" style="border-radius:24px"></div>
+      <div class="reveal" style="display:flex;flex-direction:column;gap:22px">
+        <p class="eyebrow">Quem somos</p>
+        <h2>Uma família, muitas <em>gerações</em>.</h2>
+        <p class="lead" style="color:rgba(255,255,255,.86)">Há mais de três décadas no Flamengo, a Betel é uma igreja comprometida com a Palavra de Deus, a comunhão e a missão de anunciar Jesus Cristo, sob a liderança do Pr. Clébio Torres e da Pra. Luiza Torres.</p>
+        <div class="ctas" style="margin-top:4px"><a class="btn btn-p" href="#sobre">Conheça nossa história</a><a class="btn btn-s" href="#servir">Quero servir</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="head reveal">
+        <div><p class="eyebrow">Ministérios</p><h2>Cada um tem um <em>lugar</em>.</h2></div>
+        <a class="btn btn-s" href="#ministerios">Todos os ministérios</a>
+      </div>
+      <div class="bento slide">
+        <a class="tile w2 reveal" href="#ministerios"><img src="img/mergulhados-acamp.jpg" alt="Jovens no Acampamento Mergulhados 2026"><span class="lbl"><b>Mergulhados</b><small>Juventude →</small></span></a>
+        <a class="tile p reveal" href="#ministerios"><img src="img/homens-adoracao.jpg" alt="Irmão em adoração durante o culto"><span class="lbl"><b>Homens Betel</b><small>→</small></span></a>
+        <a class="tile w2 reveal" href="#ministerios"><img src="img/mulheres-oracao.jpg" alt="Mulheres em oração no Congresso de Mulheres"><span class="lbl"><b>Mulheres Betel</b><small>→</small></span></a>
+        <a class="tile cta reveal" href="#servir"><p class="eyebrow" style="color:var(--vinho)">Servir</p><h3>Seus dons têm <em>lugar</em> aqui.</h3><span class="go">Quero servir →</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band colegio-sec">
+    <div class="halo" style="top:40%"></div>
+    <div class="wrap split" style="align-items:center">
+      <div class="reveal"><img class="colfoto" src="img/col-01.jpg" alt="Aluna do Colégio Batista Betel com as mãos pintadas fazendo coração"></div>
+      <div class="reveal" style="display:flex;flex-direction:column;gap:20px">
+        <p class="eyebrow">Colégio Batista Betel</p>
+        <h2>Educação com <em>propósito</em> desde 1998.</h2>
+        <p class="lead">Do Maternal ao 5º ano em Contagem, fundamentado nos Princípios Cristãos, Competências e Habilidades.</p>
+        <div class="ctas"><a class="btn btn-p" href="#colegio">Conheça o Colégio</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" style="background:var(--sup2)">
+    <div class="wrap">
+      <div class="head reveal">
+        <div><p class="eyebrow">Agenda</p><h2>Próximos encontros.</h2></div>
+        <a class="btn btn-s" href="#agenda">Ver agenda completa</a>
+      </div>
+      <div class="events" id="homeEvents"><p class="empty">Carregando a agenda…</p></div>
+    </div>
+  </section>
+</section>
+
+<!-- ============ SOBRE ============ -->
+<section class="view" id="v-sobre">
+  <div class="wrap sub-hero"><p class="eyebrow">Sobre nós</p><h1>Betel é <em>casa</em> de Deus.</h1></div>
+  <div class="wrap" style="padding-bottom:140px">
+    <img class="pastores reveal" src="img/pastores.jpg" alt="Pr. Clébio Torres e Pra. Luiza Torres">
+    <div class="mblock" style="border-top:0;align-items:start">
+      <div class="txt reveal">
+        <p class="eyebrow">Quem é a Betel</p>
+        <h2>Uma casa aberta no Flamengo há mais de três décadas.</h2>
+      </div>
+      <div class="txt reveal">
+        <p class="lead">A Igreja Batista Betel nasceu e cresceu no bairro Flamengo, em Contagem. Somos uma família comprometida com a Palavra de Deus, a comunhão e a missão de anunciar Jesus Cristo, um lugar onde todos são bem-vindos para encontrar fé, apoio e esperança.</p>
+        <p class="lead">Da EBD às células, do Amanhecer com Deus à Juventude Mergulhados, seguimos fazendo discípulos em nossa geração.</p>
+      </div>
+    </div>
+    <div class="mblock" style="align-items:start">
+      <div class="txt reveal">
+        <p class="eyebrow">Pastor sênior</p>
+        <h2>Pr. Clébio Torres</h2>
+        <p class="sig">Ao lado da Pra. Luiza Torres</p>
+      </div>
+      <div class="txt reveal">
+        <p class="lead">Há mais de 33 anos à frente da Igreja Batista Betel, o Pr. Clébio é Pastor Sênior desde a emancipação da igreja. Casado com a Pra. Luiza Torres e pai de três filhos, construiu seu ministério sobre o cuidado pastoral, a família e o serviço cristão.</p>
+        <p class="lead">Formado em Psicologia e Psicanálise, une fé, conhecimento e acolhimento no cuidado com as pessoas. Sua pregação clara e bíblica tem formado líderes, fortalecido famílias e alcançado gerações.</p>
+      </div>
+    </div>
+    <div class="facts">
+      <div class="fact glass reveal"><b>Palavra</b><span style="color:var(--suave)">Comprometidos com a Palavra de Deus.</span></div>
+      <div class="fact glass reveal"><b>Comunhão</b><span style="color:var(--suave)">Uma família que caminha junto.</span></div>
+      <div class="fact glass reveal"><b>Missão</b><span style="color:var(--suave)">Anunciar Jesus Cristo à nossa geração.</span></div>
+    </div>
+    <div class="mblock">
+      <p class="quote reveal">Fazendo discípulos em nossa geração.</p>
+      <img class="photo arch reveal" src="img/adoracao.jpg" alt="Irmã em adoração no culto">
+    </div>
+  </div>
+</section>
+
+<!-- ============ MINISTÉRIOS ============ -->
+<section class="view" id="v-ministerios">
+  <div class="wrap sub-hero"><p class="eyebrow">Ministérios</p><h1>Cada um tem um <em>lugar</em>.</h1><p class="lead" style="margin-top:24px">Na Betel, ninguém caminha sozinho. Escolha um ministério para conhecer, participar ou servir.</p></div>
+  <div class="wrap" id="minConteudo">
+    <article class="mblock">
+      <img class="photo reveal" style="border-radius:32px" src="img/homens-adoracao.jpg" alt="Irmão em adoração durante o culto">
+      <div class="txt reveal"><p class="eyebrow">Homens Betel</p><h2>Homens firmes na Palavra.</h2><p class="lead">Um ministério para homens de todas as idades se fortalecerem na Palavra, na oração e na amizade, para servir com amor em casa, na igreja e no trabalho.</p><div class="pills"><a class="btn btn-p" href="#agenda" data-filter="Homens Betel">Ver encontros na agenda</a></div></div>
+    </article>
+    <article class="mblock">
+      <div class="txt reveal"><p class="eyebrow">Mulheres Betel</p><h2>Mulheres que se fortalecem juntas.</h2><p class="lead">Um ministério para mulheres crescerem na fé e no cuidado umas com as outras, com congressos, encontros e momentos de comunhão.</p><div class="pills"><a class="btn btn-p" href="#agenda" data-filter="Mulheres Betel">Ver encontros na agenda</a></div></div>
+      <img class="photo reveal" src="img/culto-mulheres-adoracao.jpg" alt="Mulheres em adoração no Congresso de Mulheres">
+    </article>
+    <article class="mblock">
+      <img class="photo reveal" style="border-radius:32px" src="img/mergulhados-acamp.jpg" alt="Jovens reunidos no Acampamento Mergulhados 2026">
+      <div class="txt reveal"><p class="eyebrow">Juventude</p><h2>Mergulhados</h2><p class="lead">Há dez anos, a juventude da Betel se reúne para mergulhar na presença de Deus. Cultos de jovens, células, acampamento e conferência. As datas dos cultos de jovens ficam na agenda.</p><p class="verse">Chamados como filhos, enviados pelo Pai.</p><div class="pills"><a class="btn btn-p" href="#agenda" data-filter="Juventude Mergulhados">Eventos da juventude</a></div></div>
+    </article>
+    <div class="mblock" style="align-items:start">
+      <div class="txt reveal"><p class="eyebrow">E também</p><h2>Outros ministérios</h2><a class="btn btn-p" href="#servir" style="align-self:flex-start">Quero servir em um ministério</a><img class="photo reveal" style="border-radius:32px;height:300px" src="img/kids-teatro.jpg" alt="Teatro de fantoches com as crianças"></div>
+      <div class="grid4" style="margin-top:0">
+        <div class="culto glass"><b style="margin:0">Kids</b><small>A fé ensinada com cuidado, desde cedo.</small></div>
+        <div class="culto glass"><b style="margin:0">EBD</b><small>Domingos às 9h. Estudo bíblico para todas as idades.</small></div>
+        <div class="culto glass"><b style="margin:0">Escola de Artes</b><small>Segundas, das 17h30 às 20h: violão, bateria, hip hop, ballet, teclado e violino.</small></div>
+        <a class="culto glass" style="text-decoration:none;color:inherit" data-contato-wa="celulas" data-msg="Olá! Quero saber sobre as células da Igreja Batista Betel." href="https://wa.me/5531992997440?text=Ol%C3%A1!%20Quero%20saber%20sobre%20as%20c%C3%A9lulas%20da%20Igreja%20Batista%20Betel." target="_blank" rel="noopener noreferrer"><b style="margin:0">Células</b><small>De segunda a quarta, a igreja reunida nas casas.</small><small style="color:var(--creme);font-weight:700">Quero participar →</small></a>
+        <div class="culto glass"><b style="margin:0">Louvor</b><small>Adoração que conduz a igreja à presença de Deus.</small></div>
+        <div class="culto glass"><b style="margin:0">Mídia</b><small>Fotografia, vídeo e transmissões.</small></div>
+        <div class="culto glass"><b style="margin:0">Diaconia</b><small>Cuidado, recepção e serviço.</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PÁGINA DE UM MINISTÉRIO ============ -->
+<section class="view" id="v-ministerio">
+  <div class="wrap" id="minDetalhe" style="padding-bottom:140px"><p class="empty" style="padding-top:160px">Carregando…</p></div>
+</section>
+
+<!-- ============ AGENDA ============ -->
+<section class="view" id="v-agenda">
+  <div class="wrap sub-hero"><p class="eyebrow">Agenda</p><h1>O que vem <em>por aí</em>.</h1><p class="lead" style="margin-top:24px">Cultos especiais, encontros dos ministérios e eventos com inscrição. Garanta sua vaga.</p></div>
+  <div class="wrap" style="padding-bottom:140px">
+    <div class="head" style="margin-bottom:28px"><div><p class="eyebrow">Programação da semana</p><h2 style="font-size:clamp(30px,4vw,48px)">Próximos 7 dias.</h2></div></div>
+    <div class="days" id="daysAll"></div>
+    <div class="legend" style="margin-bottom:72px"><span><i style="background:rgba(255,255,255,.18)"></i>Programação fixa</span><span><i style="background:#FF4F6E"></i>Evento da agenda</span></div>
+    <p class="notice" style="margin-bottom:28px">Vai participar de um culto ou evento? Os encontros são fotografados e filmados. <a href="#imagem">Registre aqui se autoriza o uso da sua imagem.</a></p>
+    <p class="eyebrow" style="margin-bottom:18px">Eventos</p>
+    <div class="filters" id="filters" role="group" aria-label="Filtrar eventos"></div>
+    <div class="events" id="allEvents"><p class="empty">Carregando a agenda…</p></div>
+  </div>
+</section>
+
+<!-- ============ COLÉGIO ============ -->
+<section class="view" id="v-colegio">
+  <div class="wrap sub-hero"><p class="eyebrow">Colégio Batista Betel</p><h1>Uma escola com <em>propósito</em>.</h1><p class="lead" style="margin-top:24px">Desde 1998 em Contagem, Minas Gerais, acreditando no ensino e na educação. Do Maternal ao 5º ano, fundamentado nos Princípios Cristãos, Competências e Habilidades.</p>
+    <div class="ctas" id="colCtas"><a class="btn btn-p cp-rede" href="https://www.colegiobatistabetel.com.br/" target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.6 5.5 3.6 8.5S14.5 18 12 20.5C9.5 18 8.4 15 8.4 12S9.5 6 12 3.5z"/></svg>Site e matrículas</a><a class="btn btn-s cp-rede" href="https://www.instagram.com/colegiobatistabetelcontagem/" target="_blank" rel="noopener noreferrer" aria-label="Instagram do Colégio: @colegiobatistabetelcontagem"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"/></svg>Instagram <span class="cp-arroba">@colegiobatistabetelcontagem</span></a></div>
+  </div>
+  <div class="wrap" style="padding-bottom:140px">
+    <div id="colEtapas">
+      <div class="facts">
+        <div class="fact glass reveal"><b>Maternal</b><span style="color:var(--suave)">Os primeiros passos, com acolhimento.</span></div>
+        <div class="fact glass reveal"><b>Educação Infantil</b><span style="color:var(--suave)">Brincar, descobrir e aprender.</span></div>
+        <div class="fact glass reveal"><b>1º ao 5º ano</b><span style="color:var(--suave)">Ensino Fundamental I com valores cristãos.</span></div>
+      </div>
+    </div>
+    <div class="reveal" style="margin-top:56px"><div class="screen colvid"><video controls playsinline preload="metadata" poster="img/colegio-poster.jpg" aria-label="Vídeo de apresentação do Colégio Batista Betel"><source src="video/colegio.mp4" type="video/mp4"></video></div>
+      <div class="cgal"><img src="img/col-01.jpg" alt="Aluna com as mãos pintadas"><img src="img/col-02.jpg" alt="Alunos sorrindo no pátio"><img src="img/col-03.jpg" alt="Aluno na Festa dos Pais"><img src="img/col-04.jpg" alt="Aluna fazendo coração"><img src="img/col-05.jpg" alt="Alunos cantando"><img src="img/col-06.jpg" alt="Alunos cantando juntos"><img src="img/col-08.jpg" alt="Alunas na apresentação"><img src="img/col-10.jpg" alt="Família na Festa dos Pais"></div></div>
+    <div class="split" style="margin-top:96px">
+      <div class="info reveal" id="colInfo">
+        <div><p class="eyebrow">Telefone</p><p><a class="cp-contato" href="tel:+553133618686"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.2-2.1 1.4a11 11 0 0 0 7.2 7.2l1.4-2.1 4.2 1.6V19a1.6 1.6 0 0 1-1.7 1.6C10.6 20.1 3.9 13.4 3.4 5.2A1.6 1.6 0 0 1 5 3.5z"/></svg>(31) 3361-8686</a></p></div>
+        <div><p class="eyebrow">WhatsApp do Colégio</p><p><a class="cp-contato" data-contato-wa="colegio" data-msg="Olá! Quero saber sobre matrículas no Colégio Batista Betel." href="https://wa.me/5531995046148?text=Ol%C3%A1!%20Quero%20saber%20sobre%20matr%C3%ADculas%20no%20Col%C3%A9gio%20Batista%20Betel." target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3.5 20l1.2-3.7A8.5 8.5 0 1 1 20 11.5z"/><path d="M9 9.2c.3 2.4 2.4 4.6 4.9 5"/></svg>(31) 99504-6148</a></p></div>
+        <div><p class="eyebrow">E-mail</p><p><a class="cp-contato" href="mailto:colegiobatistabetel@gmail.com"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>colegiobatistabetel@gmail.com</a></p></div>
+        <div><p class="eyebrow">Endereço</p><p><a class="cp-contato" href="https://www.google.com/maps/search/?api=1&amp;query=Rua+dos+Luxemburgueses%2C+31+-+Flamengo%2C+Contagem+-+MG%2C+32241-130" target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>Rua dos Luxemburgueses, 31 · Flamengo · Contagem/MG</a></p></div>
+      </div>
+      <p class="verse reveal" style="font-size:clamp(26px,3vw,38px);line-height:1.3">Ensina a criança no caminho em que deve andar. <span style="font:500 13px var(--mono);font-style:normal;color:var(--suave);display:block;margin-top:12px">PROVÉRBIOS 22:6</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONTATO ============ -->
+<section class="view" id="v-contato">
+  <div class="wrap sub-hero"><p class="eyebrow">Contato</p><h1>Vamos te esperar <em>na porta</em>.</h1></div>
+  <div class="wrap split" style="padding-bottom:140px;align-items:stretch">
+    <div class="info" id="ctInfo">
+      <div><p class="eyebrow">Endereço</p><p><a class="cp-contato" href="https://www.google.com/maps/search/?api=1&amp;query=Rua+dos+Luxemburgueses%2C+31+-+Flamengo%2C+Contagem+-+MG%2C+32241-130" target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg><span>Rua dos Luxemburgueses, 31<br>Bairro Flamengo · Contagem/MG · CEP 32241-130</span></a></p></div>
+      <div><p class="eyebrow">Telefone</p><p><a class="cp-contato" href="tel:+553133339749" id="telLink"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.2-2.1 1.4a11 11 0 0 0 7.2 7.2l1.4-2.1 4.2 1.6V19a1.6 1.6 0 0 1-1.7 1.6C10.6 20.1 3.9 13.4 3.4 5.2A1.6 1.6 0 0 1 5 3.5z"/></svg>(31) 3333-9749</a></p></div>
+      <div><p class="eyebrow">WhatsApp</p><p id="wppBox"><a class="cp-contato" data-contato-wa="igreja" data-msg="Olá! Vim pelo site da Igreja Batista Betel." href="https://wa.me/553184080257?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Igreja%20Batista%20Betel." target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3.5 20l1.2-3.7A8.5 8.5 0 1 1 20 11.5z"/><path d="M9 9.2c.3 2.4 2.4 4.6 4.9 5"/></svg>(31) 8408-0257</a></p></div>
+      <div><p class="eyebrow">Redes</p><div class="social" style="margin-top:10px" id="ctRedes">
+        <a class="btn btn-s cp-rede" href="https://www.instagram.com/betelflamengo/" target="_blank" rel="noopener noreferrer" aria-label="Instagram da Igreja Batista Betel: @betelflamengo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"/></svg>Instagram <span class="cp-arroba">@betelflamengo</span></a>
+        <a class="btn btn-s cp-rede" href="https://www.youtube.com/@betelflamengo" target="_blank" rel="noopener noreferrer" aria-label="Canal da Igreja Batista Betel no YouTube: @betelflamengo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10.2 9.3v5.4l4.6-2.7z" fill="currentColor"/></svg>YouTube <span class="cp-arroba">@betelflamengo</span></a>
+      </div></div>
+    </div>
+    <a class="mapcard" id="ctMapa" href="https://www.google.com/maps/dir/?api=1&amp;destination=Rua+dos+Luxemburgueses%2C+31+-+Flamengo%2C+Contagem+-+MG%2C+32241-130" target="_blank" rel="noopener noreferrer">
+      <p class="eyebrow">Google Maps</p>
+      <h3>Rua dos Luxemburgueses, 31</h3>
+      <span class="btn btn-p" style="align-self:flex-start">Abrir rota no mapa</span>
+    </a>
+  </div>
+</section>
+
+<!-- ============ SERVIR ============ -->
+<section class="view" id="v-servir">
+  <div class="wrap sub-hero"><p class="eyebrow">Quero servir</p><h1>Seus dons têm <em>lugar</em> aqui.</h1><p class="lead" style="margin-top:24px">Conte um pouco sobre você, o que sabe fazer e quando pode servir. Nossa liderança vai conversar com você e indicar o ministério que combina com seus dons.</p></div>
+  <div class="wrap" style="padding-bottom:140px">
+    <form class="cand glass" id="cdForm" autocomplete="on">
+      <label>Nome completo<input id="cdNome" required maxlength="120" autocomplete="name"></label>
+      <label>WhatsApp<input id="cdTel" type="tel" required maxlength="20" placeholder="(31) 9 0000-0000" autocomplete="tel"></label>
+      <fieldset><legend>Você é membro da Igreja Batista Betel?</legend><div class="radio" id="cdMembro">
+        <label><input type="radio" name="cdm" value="Sim, sou membro" required> Sim, sou membro</label>
+        <label><input type="radio" name="cdm" value="Congrego, mas ainda não sou membro"> Congrego, mas ainda não sou membro</label>
+        <label><input type="radio" name="cdm" value="Ainda não congrego na Betel"> Ainda não congrego na Betel</label></div></fieldset>
+      <label>Há quanto tempo você é membro ou congrega na Betel?<select id="cdTempo" required><option value="">Selecione…</option><option>Menos de 6 meses</option><option>De 6 meses a 1 ano</option><option>De 1 a 3 anos</option><option>De 3 a 5 anos</option><option>Mais de 5 anos</option><option>Ainda não congrego</option></select></label>
+      <label>Quais são seus dons, habilidades e experiências?<textarea id="cdDons" required maxlength="800" placeholder="Ex.: toco violão há 5 anos, gosto de crianças, sei fotografar, tenho facilidade em receber pessoas…"></textarea></label>
+      <label>Você já serviu em algum ministério? Onde e em quê?<textarea id="cdExp" maxlength="600"></textarea></label>
+      <fieldset><legend>Disponibilidade</legend><div class="deps" id="cdDisp"></div></fieldset>
+      <label>Por que você deseja servir?<textarea id="cdPq" required maxlength="600"></textarea></label>
+      <label class="check"><input id="cdOk" type="checkbox" required> Autorizo a Igreja Batista Betel a entrar em contato comigo pelo WhatsApp</label>
+      <div><button class="btn btn-p" type="submit" id="cdSend">Enviar candidatura</button></div>
+      <span class="msg" id="cdMsg"></span>
+      <div id="cdDone"></div>
+    </form>
+  </div>
+</section>
+
+<!-- ============ INSCRIÇÃO ============ -->
+<section class="view" id="v-inscricao">
+  <div class="wrap sub-hero"><p class="eyebrow" id="insEyebrow">Inscrição</p><h1 id="insTitulo">Inscrição</h1><p class="lead" style="margin-top:24px" id="insMeta"></p></div>
+  <div class="wrap" style="padding-bottom:140px">
+    <div id="insBox"><p class="empty">Carregando o evento…</p></div>
+  </div>
+</section>
+
+<!-- ============ AUTORIZAÇÃO DE IMAGEM ============ -->
+<section class="view" id="v-imagem">
+  <div class="wrap sub-hero"><p class="eyebrow">Cultos e eventos</p><h1>Uso de <em>imagem</em>.</h1><p class="lead" style="margin-top:24px">Registramos fotos e vídeos dos cultos e eventos para o site, as redes e as transmissões da Betel. Diga aqui se você autoriza o uso da sua imagem, ou da imagem de quem está sob sua responsabilidade.</p></div>
+  <div class="wrap" style="padding-bottom:140px"><div id="imgBox">
+    <form class="formcard glass" id="imgForm" style="max-width:900px" autocomplete="on" novalidate>
+      <h3>Autorização de uso de imagem</h3><div class="formgrid">
+        <label class="full">Nome completo de quem aparece nas imagens<input id="iaNome" required maxlength="100" autocomplete="name"></label>
+        <label>Data de nascimento<input id="iaNasc" type="date" required></label>
+        <label>WhatsApp<input id="iaTel" type="tel" required maxlength="20" placeholder="(31) 9 0000-0000" autocomplete="tel"></label>
+        <label class="full">E-mail (opcional)<input id="iaEmail" type="email" maxlength="120" autocomplete="email"></label>
+        <label class="full">Vale para<select id="iaEscopo"></select></label>
+        <div class="full"><p style="font-weight:600;font-size:14px;margin:0 0 8px">Sua resposta</p><div class="img-ops" role="radiogroup" aria-label="Autorização de uso de imagem"><label class="check"><input type="radio" name="iaResp" value="Autorizo"> Autorizo o uso de imagem</label><label class="check"><input type="radio" name="iaResp" value="Não autorizo"> Não autorizo o uso de imagem</label></div></div>
+        <div class="full ins-sec" id="iaMenor" hidden><h4>Responsável <span class="tag on" style="margin-left:6px">menor de 18 anos</span></h4>
+          <div class="formgrid" style="padding:0">
+            <label>Nome do responsável<input id="iaRespNome" maxlength="100"></label>
+            <label>Parentesco<select id="iaRespPar"><option>Pai</option><option>Mãe</option><option>Responsável legal</option></select></label>
+            <label>CPF ou RG do responsável<input id="iaRespDoc" maxlength="20" inputmode="numeric"></label>
+            <label>WhatsApp do responsável<input id="iaRespTel" type="tel" maxlength="20"></label>
+          </div></div>
+        <div class="full ins-sec"><h4>Termo</h4><div class="termo" id="iaTermo"></div>
+          <p style="font-weight:600;font-size:14px;margin:14px 0 8px" id="iaAssLbl">Assinatura do participante</p>
+          <div class="ass-wrap"><canvas id="imgCanvas" aria-label="Área para assinar com o dedo ou o mouse"></canvas><button class="mini sm" type="button" id="imgLimpar">Limpar</button></div>
+          <p class="m" style="color:var(--suave);font-size:13px;margin-top:6px">Assine com o dedo (celular) ou com o mouse (computador).</p>
+          <label class="check" style="margin-top:10px"><input id="iaOk" type="checkbox"> Li o termo acima e confirmo a minha resposta.</label></div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px"><button class="btn btn-p" type="submit" id="iaSend">Registrar minha resposta</button><span class="msg" id="iaMsg"></span></div>
+    </form></div></div>
+</section>
+
+<!-- ============ PAGAMENTO (retorno) ============ -->
+<section class="view" id="v-pagamento">
+  <div class="wrap sub-hero"><p class="eyebrow">Pagamento</p><h1 id="pgTitulo">Obrigado!</h1><p class="lead" style="margin-top:24px" id="pgTexto"></p>
+    <div class="ctas" style="margin-top:28px"><a class="btn btn-p" href="#agenda">Ver a agenda</a><a class="btn btn-s" href="#inicio">Voltar ao início</a></div></div>
+</section>
+
+<!-- ============ VOLUNTÁRIO ============ -->
+<section class="view" id="v-voluntario">
+  <div class="wrap sub-hero"><p class="eyebrow">Voluntários</p><h1>Minha <em>escala</em>.</h1><p class="lead" style="margin-top:24px">Entre com sua conta para ver os dias em que você serve e marcar as datas em que não pode servir.</p></div>
+  <div class="wrap" style="padding-bottom:140px">
+    <label style="max-width:420px" id="volPickWrap" hidden>Ver a escala de<select id="volPick"><option value="">Selecione…</option></select></label>
+    <div id="volOut" style="margin-top:36px"><p class="empty" id="volEmpty">Carregando voluntários…</p></div>
+  </div>
+</section>
+
+<!-- ============ EQUIPE ============ -->
+<section class="view" id="v-equipe">
+  <div class="wrap sub-hero"><p class="eyebrow">Área de Membros</p><h1 id="admTitle">Área de <em>Membros</em>.</h1><p class="lead" style="margin-top:24px" id="admLead">Secretaria, líderes de ministério e voluntários entram com a própria conta e veem só o que é da sua função.</p></div>
+  <div class="wrap" style="padding-bottom:140px">
+    <p class="msg" id="authBar" hidden style="margin-bottom:24px"></p>
+    <div id="admGate"><p class="msg">Verificando seu acesso…</p></div>
+    <div id="admin" hidden>
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" data-tab="agenda" aria-selected="true">Agenda</button>
+        <button role="tab" data-tab="membros" aria-selected="false">Membros</button>
+        <button role="tab" data-tab="visitantes" aria-selected="false">Visitantes</button>
+        <button role="tab" data-tab="inscricoes" aria-selected="false">Inscrições</button>
+        <button role="tab" data-tab="imagem" aria-selected="false">Uso de imagem</button>
+        <button role="tab" data-tab="voluntarios" aria-selected="false">Voluntários</button>
+        <button role="tab" data-tab="escalas" aria-selected="false">Escalas</button>
+        <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas</button>
+        <button role="tab" data-tab="config" aria-selected="false">Contatos e mensagens</button>
+        <button role="tab" data-tab="acessos" aria-selected="false">Acessos</button>
+      </div>
+
+      <!-- AGENDA -->
+      <div class="pane on" id="p-agenda">
+        <div class="stack">
+          <form class="formcard glass" id="evForm" novalidate>
+            <h3 id="evTitle">Novo evento</h3>
+            <div class="formgrid" id="evFields"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Salvar evento</button><button class="btn btn-s" type="button" id="evCancel">Limpar</button></div>
+            <span class="msg" id="evMsg"></span>
+            <div id="evDone"></div>
+          </form>
+          <div class="glass list" id="admList"></div>
+        </div>
+      </div>
+
+      <!-- MEMBROS -->
+      <div class="pane" id="p-membros">
+        <div class="stack">
+          <form class="formcard glass" id="mForm" autocomplete="off" novalidate>
+            <h3 id="mTitle">Cadastrar membro</h3>
+            <div class="formgrid" id="mFields"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Salvar membro</button><button class="btn btn-s" type="button" id="mCancel">Limpar</button></div>
+            <span class="msg" id="mMsg"></span>
+            <div id="mDone"></div>
+          </form>
+          <div><div class="toolbar"><input id="mBusca" placeholder="Buscar por nome, bairro ou telefone" aria-label="Buscar membro"></div><div class="glass list" id="mList"></div></div>
+        </div>
+      </div>
+
+      <!-- VISITANTES -->
+      <div class="pane" id="p-visitantes">
+        <div class="stack">
+          <form class="formcard glass" id="vForm" autocomplete="off" novalidate>
+            <h3 id="vTitle">Cadastrar visitante</h3>
+            <div class="formgrid" id="vFields"></div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Salvar visitante</button><button class="btn btn-s" type="button" id="vCancel">Limpar</button></div>
+            <span class="msg" id="vMsg"></span>
+            <div id="vDone"></div>
+          </form>
+          <div><div class="toolbar"><input id="vBusca" placeholder="Buscar visitante" aria-label="Buscar visitante"><div class="filters" id="vFiltro"></div></div><div class="glass list" id="vList"></div></div>
+        </div>
+      </div>
+
+      <!-- VOLUNTÁRIOS -->
+      <div class="pane" id="p-voluntarios">
+        <div class="two">
+          <form class="card glass" id="volForm" autocomplete="off">
+            <h3 id="volTitle">Cadastrar voluntário</h3>
+            <label>Nome<input id="volNome" required maxlength="80"></label>
+            <fieldset style="border:0;padding:0;margin:0"><legend style="font-weight:600;font-size:14px;margin-bottom:10px">Departamentos</legend><div class="deps" id="volDeps"></div></fieldset>
+            <label>WhatsApp<input id="volTel" maxlength="20" inputmode="tel" placeholder="(31) 9 0000-0000"></label>
+            <p class="notice">Nome e departamentos aparecem em "Minha escala". O WhatsApp fica visível só para a equipe e é usado para avisar quando a pessoa for escalada.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Salvar voluntário</button><button class="btn btn-s" type="button" id="volCancel">Limpar</button></div>
+            <span class="msg" id="volMsg"></span>
+          </form>
+          <div><div class="toolbar"><div class="filters" id="volFiltro"></div></div><div class="glass list" id="volList"></div></div>
+        </div>
+      </div>
+
+      <!-- ESCALAS -->
+      <div class="pane" id="p-escalas">
+        <div class="stack">
+          <div class="glass" style="border-radius:20px"><div style="padding:22px 22px 8px"><h3 style="font-size:24px">Eventos aguardando escala</h3><p class="lead" style="font-size:15px;margin-top:6px">Quando a secretaria marca que um evento precisa de Mídia, Diaconia ou Louvor, ele aparece aqui até a escala do departamento ser montada.</p></div><div id="pendList"></div></div>
+          <div class="two">
+            <form class="card glass" id="esForm">
+              <h3 id="esTitle">Nova escala</h3>
+              <label>Evento da agenda (opcional)<select id="esEvento"></select></label>
+              <label>Data<input id="esData" type="date" required></label>
+              <label>Horário<input id="esHora" type="time"></label>
+              <label>Departamento<select id="esDep"></select></label>
+              <label>Culto ou evento<input id="esCulto" maxlength="80" placeholder="Culto de Celebração"></label>
+              <fieldset style="border:0;padding:0;margin:0"><legend style="font-weight:600;font-size:14px;margin-bottom:10px">Voluntários</legend><div class="deps" id="esVols"></div></fieldset>
+              <label>Funções ou observações<input id="esObs" maxlength="160" placeholder="Vocal: Ana · Teclado: João"></label>
+              <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="submit">Salvar escala</button><button class="btn btn-s" type="button" id="esCancel">Limpar</button></div>
+              <span class="msg" id="esMsg"></span>
+            </form>
+            <div><div class="toolbar"><div class="filters" id="esFiltro"></div></div><div class="glass list" id="esList"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CANDIDATURAS -->
+      <div class="pane" id="p-candidaturas">
+        <div class="toolbar"><div class="filters" id="cdFiltro"></div></div>
+        <div class="glass list" id="cdList"></div>
+      </div>
+
+      <!-- INSCRIÇÕES -->
+      <div class="pane" id="p-inscricoes">
+        <div class="toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:18px">
+          <label style="min-width:260px;flex:1">Evento<select id="insEv"></select></label>
+          <label style="min-width:180px">Situação<select id="insSt"><option value="">Todas</option><option>Aguardando pagamento</option><option>Pago</option><option>Cancelada</option></select></label>
+          <button class="btn btn-s" type="button" id="insCsv">Baixar planilha (CSV)</button>
+        </div>
+        <div class="kpis" id="insKpis"></div>
+        <div class="glass list" id="insList"></div>
+      </div>
+
+      <!-- USO DE IMAGEM -->
+      <div class="pane" id="p-imagem">
+        <div class="toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:18px">
+          <label style="min-width:220px;flex:1">Buscar pelo nome<input id="imgBusca" maxlength="60"></label>
+          <label style="min-width:180px">Resposta<select id="imgFiltro"><option value="">Todas</option><option>Autorizo</option><option>Não autorizo</option></select></label>
+          <button class="btn btn-s" type="button" id="imgCsv">Baixar planilha (CSV)</button>
+        </div>
+        <p class="notice" style="margin-bottom:14px">Link para enviar às pessoas: página <b>Autorização de uso de imagem</b> (rodapé do site). Quem marcou "Não autorizo" não deve aparecer em fotos e vídeos publicados.</p>
+        <div class="kpis" id="imgKpis"></div>
+        <div class="glass list" id="imgList"></div>
+      </div>
+
+      <!-- ACESSOS -->
+      <div class="pane" id="p-acessos">
+        <div class="stack">
+          <div class="glass" style="border-radius:20px"><div style="padding:22px 22px 8px"><h3 style="font-size:24px">Pedidos de acesso</h3><p class="lead" style="font-size:15px;margin-top:6px" id="acInfo"></p></div><div class="list" id="acPend"></div></div>
+          <div class="glass" style="border-radius:20px"><div style="padding:22px 22px 8px"><h3 style="font-size:24px">Quem tem acesso</h3></div><div class="list" id="acList"></div></div>
+          <p class="notice" id="acHow">Como liberar alguém: 1) compartilhe o site com a pessoa pelo botão Compartilhar do Claude: como Editor para secretaria e líderes, como Colaborador para voluntários. 2) A pessoa abre a Área de Membros e envia o pedido. 3) O pedido aparece aqui para liberar.</p>
+        </div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="pane" id="p-config">
+        <form class="formcard glass" id="cfForm" style="max-width:900px">
+          <h3>Contatos e mensagens</h3>
+          <div class="formgrid">
+            <h4>Contatos da igreja</h4>
+            <label>WhatsApp da igreja<input id="cfWpp" type="tel" maxlength="20"></label>
+            <label>Telefone fixo<input id="cfTel" type="tel" maxlength="20"></label>
+            <h4>Pagamentos das inscrições</h4>
+            <label>Chave Pix da igreja (ministérios)<input id="cfPix" maxlength="120"></label>
+            <label>Chave Pix da Juventude Mergulhados<input id="cfPixJ" maxlength="120"></label>
+            <p class="notice full">Taxas cobradas pelo meio de pagamento, em %. O site soma a taxa ao valor de cada inscrição para a igreja receber 100%. No crédito parcelado, os juros das parcelas também ficam com quem paga.</p>
+            <label>Taxa do Pix (%)<input id="cfTxPix" type="number" step="0.01" min="0" max="30"></label>
+            <label>Taxa do débito (%)<input id="cfTxDeb" type="number" step="0.01" min="0" max="30"></label>
+            <label>Taxa do crédito à vista (%)<input id="cfTxCred" type="number" step="0.01" min="0" max="30"></label>
+            <h4>Mensagens padrão</h4>
+            <p class="notice full">Use {nome}, {primeiro}, {telefone}, {data}, {como}, {obs}. Na mensagem para líderes: {lider}, {evento}, {data}, {hora}, {local}, {departamento}, {obs}.</p>
+            <label class="full">Boas-vindas para novo membro<textarea class="tpl" id="cfMsgM"></textarea></label>
+            <label class="full">Primeira mensagem para visitante<textarea class="tpl" id="cfMsgV"></textarea></label>
+            <h4>Acompanhamento de visitantes</h4>
+            <label>WhatsApp da Elaine<input id="cfElaine" type="tel" maxlength="20"></label>
+            <span></span>
+            <label class="full">Mensagem para a Elaine<textarea class="tpl" id="cfMsgE"></textarea></label>
+            <h4>Líderes dos ministérios (acionados pelos eventos)</h4>
+            <div class="full formgrid" id="cfLideres" style="gap:14px 18px"></div>
+            <label class="full">Mensagem para o líder<textarea class="tpl" id="cfMsgL"></textarea></label>
+          </div>
+          <div><button class="btn btn-p" type="submit">Salvar configurações</button></div>
+          <span class="msg" id="cfMsg"></span>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div class="fcol" style="max-width:320px"><img src="img/logo.png" alt="Igreja Batista Betel" style="height:110px;width:auto;align-self:flex-start"><p class="verse" style="margin-top:12px">Betel é casa de Deus.</p></div>
+      <div class="fcol" id="ftRedes"><p class="eyebrow">Acompanhe</p><a class="cp-rede-link" href="https://www.youtube.com/@betelflamengo" target="_blank" rel="noopener noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10.2 9.3v5.4l4.6-2.7z" fill="currentColor"/></svg>YouTube <span class="cp-arroba">@betelflamengo</span></a><a class="cp-rede-link" href="https://www.instagram.com/betelflamengo/" target="_blank" rel="noopener noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"/></svg>Instagram <span class="cp-arroba">@betelflamengo</span></a><a class="cp-rede-link" href="https://www.instagram.com/colegiobatistabetelcontagem/" target="_blank" rel="noopener noreferrer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"/></svg>Colégio <span class="cp-arroba">@colegiobatistabetelcontagem</span></a><a class="cp-rede-link" href="tel:+553133339749"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.2l1.6 4.2-2.1 1.4a11 11 0 0 0 7.2 7.2l1.4-2.1 4.2 1.6V19a1.6 1.6 0 0 1-1.7 1.6C10.6 20.1 3.9 13.4 3.4 5.2A1.6 1.6 0 0 1 5 3.5z"/></svg>(31) 3333-9749</a></div>
+      <div class="fcol"><p class="eyebrow">Endereço</p><a href="https://www.google.com/maps/dir/?api=1&amp;destination=Rua+dos+Luxemburgueses%2C+31+-+Flamengo%2C+Contagem+-+MG%2C+32241-130" target="_blank" rel="noopener noreferrer">Rua dos Luxemburgueses, 31<br>Flamengo · Contagem/MG</a><a class="btn btn-p sm" href="https://www.google.com/maps/dir/?api=1&amp;destination=Rua+dos+Luxemburgueses%2C+31+-+Flamengo%2C+Contagem+-+MG%2C+32241-130" target="_blank" rel="noopener noreferrer" style="align-self:flex-start;margin-top:6px">Como chegar (Google Maps)</a><a class="btn btn-s sm" href="https://waze.com/ul?q=Rua%20dos%20Luxemburgueses%2031%2C%20Flamengo%2C%20Contagem%20MG&amp;navigate=yes" target="_blank" rel="noopener noreferrer" style="align-self:flex-start">Abrir no Waze</a></div>
+    </div>
+    <div class="legal"><span>© 2026 Igreja Batista Betel no Flamengo · CNPJ 73.517.948/0001-92</span><span>Fazendo discípulos em nossa geração.</span></div>
+  </div>
+</footer>
+<a class="wfab" id="wfab" data-contato-wa="igreja" data-msg="Olá! Vim pelo site da Igreja Batista Betel." href="https://wa.me/553184080257?text=Ol%C3%A1!%20Vim%20pelo%20site%20da%20Igreja%20Batista%20Betel." target="_blank" rel="noopener noreferrer" aria-label="Falar com a Betel no WhatsApp"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L3.5 20l1.2-3.7A8.5 8.5 0 1 1 20 11.5z"></path><path d="M9 9.2c.3 2.4 2.4 4.6 4.9 5"></path></svg><span>WhatsApp</span></a>

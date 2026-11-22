@@ -1,0 +1,49 @@
+<section class="view" id="v-cursos">
+  <div class="wrap sub-hero"><p class="eyebrow">Cursos e Formação Betel</p><h1>Cresça em <em>conhecimento</em>.</h1><p class="lead" style="margin-top:24px">Formação teológica, integração e serviço. Escolha um curso para ver os detalhes e as turmas com inscrições abertas.</p></div>
+  <div class="wrap" style="padding-bottom:140px"><div id="cuLista"><p class="msg">Carregando cursos…</p></div></div>
+</section>
+<section class="view" id="v-curso">
+  <div class="wrap" style="padding:140px 0 140px"><div id="cuPagina"><p class="msg">Carregando…</p></div></div>
+</section>
+<section class="view" id="v-membresia">
+  <div class="wrap sub-hero"><p class="eyebrow">Membresia</p><h1>Quero ser <em>membro</em>.</h1></div>
+  <div class="wrap" style="padding-bottom:140px"><div id="mbConteudo"></div></div>
+</section>
+<section class="view" id="v-inscricao-curso">
+  <div class="wrap sub-hero"><p class="eyebrow">Cursos e Formação Betel</p><h1>Minha <em>inscrição</em>.</h1></div>
+  <div class="wrap" style="padding-bottom:140px"><div id="cuMinha"><p class="msg">Carregando…</p></div></div>
+</section>
+<style>
+.cuGrupo{margin-top:56px}.cuGrupo:first-child{margin-top:0}
+.cuGrupo>h2{font-size:clamp(26px,3vw,36px);margin-bottom:22px}
+.cuCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:18px}
+.cuCard{display:flex;flex-direction:column;overflow:hidden;color:var(--tinta);text-decoration:none;border-radius:24px;transition:transform .2s,border-color .2s}
+.cuCard:hover{transform:translateY(-3px);border-color:rgba(255,225,178,.35)}
+.cuImg{aspect-ratio:16/9;width:100%;object-fit:cover;display:block;background:linear-gradient(135deg,#582121,#2a0f0f)}
+.cuImg.vazia{display:grid;place-items:center;font:300 54px/1 var(--serif);color:rgba(255,225,178,.55)}
+.cuCorpo{padding:22px 24px 24px;display:flex;flex-direction:column;gap:10px;flex:1}
+.cuCorpo h3{font-size:22px;line-height:1.2}
+.cuCorpo p{color:var(--suave);font-size:15px;line-height:1.55}
+.cuCorpo .st{align-self:flex-start;margin-top:auto}
+.cuTopo{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:36px;align-items:start}
+@media(max-width:900px){.cuTopo{grid-template-columns:1fr}}
+.cuTopo img,.cuTopo .cuImg{border-radius:28px}
+.cuInfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;margin-top:18px}
+.cuInfo div{padding:14px 16px;border:1px solid var(--linha);border-radius:16px}
+.cuInfo b{display:block;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--suave);margin-bottom:6px}
+.cuTexto{white-space:pre-line;color:var(--suave);line-height:1.7;font-size:16px}
+.cuTurma{padding:26px;display:flex;flex-direction:column;gap:16px;margin-top:18px}
+.cuOculto{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.cuAceite{flex-direction:row!important;align-items:flex-start;gap:10px!important;font-weight:500!important}
+.cuAceite input{min-height:auto;width:20px;height:20px;margin-top:2px;accent-color:#FFE1B2}
+.tmTexto{border:1px solid var(--linha);border-radius:14px;padding:10px 14px;font-size:14px}
+.tmTexto summary{cursor:pointer;font-weight:600}
+.tmTexto div{white-space:pre-line;color:var(--suave);line-height:1.6;margin-top:10px;max-height:320px;overflow:auto}
+.tmPart,.tmImg,.tmResp{border:1px solid var(--linha);border-radius:18px;padding:16px 18px;display:grid;gap:12px}
+.tmPart legend,.tmImg legend,.tmResp legend{padding:0 6px;font-weight:700}
+.tmNota{font-size:14px;color:var(--suave)}
+.tmOpcoes{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:15px}
+.tmOpcoes label{flex-direction:row!important;align-items:center;gap:8px!important}
+.tmOpcoes input{min-height:auto;width:18px;height:18px;accent-color:#FFE1B2}
+.tmLista{display:grid;gap:8px;padding-left:18px;font-size:14px;color:var(--suave)}
+</style>
